@@ -36,9 +36,8 @@ public class RandomSplit implements Serializable {
     public DataFrame[] randomSplit(DataFrame df, PrintBuffer buffer) {
         //Obtain Distinct Labels
         Row[]  distinctLabels = df.select(labelCol).distinct().collect();
-        Map<Double, DataFrame[]> distinctSplitMap = new HashMap<>();
         //Filter according to each label
-            //Split According to each label
+        //Split According to each label
         Row row = distinctLabels[0];
         Double label = row.getDouble(0);
         DataFrame[] splitted = df.filter(df.col(labelCol).eqNullSafe(label)).randomSplit(weights);
@@ -56,7 +55,7 @@ public class RandomSplit implements Serializable {
             testFrame = testFrame.unionAll(splitted[1]);
         }
 
-
+        buffer.addLine("");
         return new DataFrame[]{trainFrame, testFrame};
     }
 }

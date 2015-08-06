@@ -18,5 +18,6 @@ public class PrintBuffer implements Serializable{
 
     public void print(){
         System.out.print(buffer.toString());
+        buffer.delete(0, buffer.length());
     }
 }

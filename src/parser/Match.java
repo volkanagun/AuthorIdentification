@@ -68,14 +68,12 @@ public class Match implements Serializable, Comparable<Match> {
     }
 
     public boolean contains(Match match){
-        if(start<=match.start && end>=match.end) return true;
-        else return false;
+        return start <= match.start && end >= match.end;
     }
 
     public boolean intersect(Match match){
         if(match.start > start && match.start < end && match.end > end) return true;
-        else if(start > match.start && start < match.end && end > match.end) return true;
-        else return false;
+        else return start > match.start && start < match.end && end > match.end;
     }
 
     @Override

@@ -28,17 +28,15 @@ import java.io.Serializable;
 public class ReutersPipeLine implements Serializable{
 
     public void pipeline(JavaSparkContext sc, RDDProcessing processing){
+
         PrintBuffer buffer = new PrintBuffer();
         SQLContext sqlContext = new SQLContext(sc);
-        RandomSplit rndSplit = new RandomSplit("label",new double[]{0.9,0.1});
+        RandomSplit rndSplit = new RandomSplit("label",new double[]{0.7,0.3});
         JavaRDD<ReutersDoc> reutersRDD = processing.reutersRDD(sc,buffer, 10);
         DataFrame df = sqlContext.applySchema(reutersRDD, ReutersDoc.class);
         DataFrame[] trainTestDf = rndSplit.randomSplit(df, buffer);
         DataFrame trainFrame = trainTestDf[0].cache();
         DataFrame testFrame = trainTestDf[1].cache();
-
-
-
 
         Tokenizer tokenizer = new Tokenizer()
                 .setInputCol("text")
@@ -48,6 +46,7 @@ public class ReutersPipeLine implements Serializable{
                 .setNumFeatures(1000)
                 .setInputCol(tokenizer.getOutputCol())
                 .setOutputCol("features");
+
 
         DecisionTreeClassifier dc = new DecisionTreeClassifier();
         dc.setLabelCol("label");
@@ -87,9 +86,19 @@ public class ReutersPipeLine implements Serializable{
         buffer.addLine("F1-Measure:" + fmeasure);
         buffer.addLine("Confusion:" + matrix);
 
+        //buffer.print();
+
         for(double i=0; i<10; i++){
+
             double fprate = metrics.falsePositiveRate(i);
-            buffer.addLine("False Positive Rate:"+i+"->"+fprate);
+            double precision = metrics.precision(i);
+            double recall = metrics.recall(i);
+
+            buffer.addLine("Label : "+i+"->");
+            buffer.addLine("\tFalse Positives->"+fprate);
+            buffer.addLine("\tPrecision Rate->"+precision);
+            buffer.addLine("\tRecall Rate->"+recall);
+
         }
 
         sc.close();
@@ -110,7 +119,7 @@ public class ReutersPipeLine implements Serializable{
 
     public static void main(String[] args){
         RDDProcessing processing = new RDDProcessing();
-        JavaSparkContext sc = new JavaSparkContext(processing.initLocal());
+        JavaSparkContext sc = new JavaSparkContext(RDDProcessing.initLocal());
         ReutersPipeLine pipeLine = new ReutersPipeLine();
         pipeLine.pipeline(sc, processing);
     }

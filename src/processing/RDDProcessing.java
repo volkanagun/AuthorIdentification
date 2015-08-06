@@ -36,6 +36,7 @@ public class RDDProcessing implements Serializable {
     private String TWEETDIRECTORY = "resources/twitter/twitter*";
 
     public RDDProcessing() {
+
     }
 
 
@@ -186,12 +187,15 @@ public class RDDProcessing implements Serializable {
 
         //Load files and parse documents
         JavaPairRDD<String, String> filesRDD = loadXML(sparkContext);
-        JavaRDD<Reuters> reutersRDD = filesRDD.flatMapValues(new Function<String, Iterable<Reuters>>() {
+        JavaRDD<Reuters> reutersRDD = filesRDD.flatMap(new FlatMapFunction<Tuple2<String, String>, Reuters>()
+        {
             @Override
-            public Iterable<Reuters> call(String v1) throws Exception {
-                return XMLParser.parseReuters(v1);
+            public Iterable<Reuters> call(Tuple2<String, String> stringStringTuple2) throws Exception {
+                String filename = stringStringTuple2._1();
+                String text = stringStringTuple2._2();
+                return XMLParser.parseReuters(filename, text);
             }
-        }).values();
+        });
 
         //JavaRDD<Reuters> documentRDD = reutersRDD.values();
 
@@ -231,7 +235,7 @@ public class RDDProcessing implements Serializable {
         for (Tuple2<String, Long> tuple : top10Count) {
             top10Map.put(tuple._1(), labelId);
             labelId++;
-            buffer.addLine(tuple._1() + "->" + tuple._2());
+            buffer.addLine(tuple._1() + "->" +labelId+"->"+tuple._2());
         }
 
         List<ReutersDoc> documentList = new ArrayList<>();
@@ -280,6 +284,8 @@ public class RDDProcessing implements Serializable {
         return new SparkConf()
                 .setAppName("Reuters Processing")
                 .setMaster("local[6]")
+                .set("spark.executor.memory", "20g")
+                .set("spark.broadcast.blockSize", "50")
                 /*.set("spark.logConf", "true")*/
                 .set("log4j.rootCategory", Level.OFF.getName());
     }

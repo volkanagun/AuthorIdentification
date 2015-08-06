@@ -71,7 +71,7 @@ final class DecisionTreeClassifier(override val uid: String)
   override protected def train(dataset: DataFrame): DecisionTreeClassificationModel = {
     val categoricalFeatures: Map[Int, Int] =
       MetadataUtils.getCategoricalFeatures(dataset.schema($(featuresCol)))
-    val numClasses = dataset.select($(labelCol)).distinct().collect().length;
+    val numClasses = 10;//dataset.select($(labelCol)).distinct().collect().length;
 
     /*Int = MetadataUtils.getNumClasses(dataset.schema($(labelCol))) match {
          case Some(n: Int) => n

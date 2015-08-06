@@ -39,7 +39,7 @@ public class XMLParser implements Serializable {
         return new ByteArrayInputStream(text.getBytes(Charset.forName("UTF-8")));
     }
 
-    public static List<structures.Reuters> parseReuters(String text) {
+    public static List<structures.Reuters> parseReuters(String filename, String text) {
         //Get the DOM Builder Factory
 
         List<structures.Reuters> anyDocumentList = new ArrayList<>();
@@ -70,16 +70,16 @@ public class XMLParser implements Serializable {
 
             }
         } catch (ParserConfigurationException e) {
-            System.err.println("ERROR!!");
+            System.err.println("ERROR!! in "+filename);
 
         } catch (SAXException e) {
-            System.err.println("ERROR!!");
+            System.err.println("ERROR!! in "+filename);
         } catch (IOException e) {
-            System.err.println("ERROR!!");
+            System.err.println("ERROR!! in "+filename);
         } catch (NullPointerException e) {
-            System.err.println("ERROR!!");
+            System.err.println("ERROR!! in "+filename);
         } catch (Exception ex) {
-            System.err.println("ERROR!!");
+            System.err.println("ERROR!! in "+filename);
         }
         return anyDocumentList;
     }
@@ -354,7 +354,7 @@ public class XMLParser implements Serializable {
 
         XMLParser parser = new XMLParser();
         text = clean(text);
-        List<structures.Document> article = parser.parseDocument(text);
+        List<structures.Document> article = parseDocument(text);
 
 
     }

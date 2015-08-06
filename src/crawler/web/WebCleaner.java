@@ -77,6 +77,7 @@ public class WebCleaner implements Serializable {
 
     //Reuters
     private static String[] three = new String[]{"&#3;"," "};
+    private static String[] unk1 = new String[]{"�&#5;&#30;","I"};
     private static String[] lt = new String[]{"&lt;"," lt "};
     private static String[] gt = new String[]{"&gt;"," gt "};
 
@@ -149,6 +150,7 @@ public class WebCleaner implements Serializable {
         replaceList.add(lt);
         replaceList.add(gt);
         replaceList.add(three);
+        replaceList.add(unk1);
 
 
 
