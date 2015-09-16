@@ -1,5 +1,6 @@
 package processing;
 
+import models.opennlp.SentenceDetectorML;
 import util.PrintBuffer;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.spark.SparkConf;
@@ -185,6 +186,8 @@ public class RDDProcessing implements Serializable {
      */
     public JavaRDD<ReutersDoc> reutersRDD(JavaSparkContext sparkContext, PrintBuffer buffer, int topNtopics) {
 
+        final SentenceDetectorML sentenceDetectorML = new SentenceDetectorML();
+
         //Load files and parse documents
         JavaPairRDD<String, String> filesRDD = loadXML(sparkContext);
         JavaRDD<Reuters> reutersRDD = filesRDD.flatMap(new FlatMapFunction<Tuple2<String, String>, Reuters>()
@@ -205,8 +208,11 @@ public class RDDProcessing implements Serializable {
             public Iterable<ReutersDoc> call(Reuters reuters) throws Exception {
                 List<ReutersDoc> reutersList = new ArrayList<>();
                 for (String topic : reuters.getTopicList()) {
-                    if (reuters.getText() != null) {
-                        ReutersDoc reutersDoc = new ReutersDoc(reuters.getText(), topic);
+                    String text = reuters.getText();
+                    if (text != null) {
+                        String[] sentences = sentenceDetectorML.fit(text);
+                        ReutersDoc reutersDoc = new ReutersDoc(text, topic);
+                        reutersDoc.setSentences(Arrays.asList(sentences));
                         reutersList.add(reutersDoc);
                     }
                 }

@@ -1,12 +1,14 @@
 package structures.summary;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Created by wolf on 01.08.2015.
  */
 public class ReutersDoc implements Serializable {
     private String text;
+    private List<String> sentences;
     private String topic;
     private int id;
     private double label;
@@ -15,6 +17,14 @@ public class ReutersDoc implements Serializable {
         this.text = text;
         this.topic = topic;
         this.id = text.hashCode();
+    }
+
+    public List<String> getSentences() {
+        return sentences;
+    }
+
+    public void setSentences(List<String> sentences) {
+        this.sentences = sentences;
     }
 
     public int getId() {

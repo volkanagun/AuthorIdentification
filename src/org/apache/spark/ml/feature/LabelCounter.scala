@@ -64,7 +64,8 @@ class LabelCounter(override val uid: String) extends Transformer with HasInputCo
     val hashingTF = new feature.HashingTF($(numFeatures))
     val t = udf { terms: Seq[_] => hashingTF.transform(terms) }
     val metadata = outputSchema($(outputCol)).metadata
-    dataset.select(col("*"), t(col($(inputCol))).as($(outputCol), metadata))
+    val dframe = dataset.select(col("*"), t(col($(inputCol))).as($(outputCol), metadata))
+    dframe
   }
 
   override def transformSchema(schema: StructType): StructType = {
