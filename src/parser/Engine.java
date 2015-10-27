@@ -80,9 +80,6 @@ public class Engine implements Serializable {
             }
         }
 
-
-
-
         return Match.regroup(matchList);
     }
 
@@ -129,7 +126,7 @@ public class Engine implements Serializable {
             }
         }
 
-        chart.printChart();
+        //chart.printChart();
         return chart.chartResult();
     }
 

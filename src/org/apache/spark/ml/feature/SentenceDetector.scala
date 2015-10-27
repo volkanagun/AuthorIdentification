@@ -31,6 +31,7 @@ class SentenceDetector(override val uid: String) extends Transformer with HasInp
   val sentenceDetectorML = new SentenceDetectorML()
 
   override def transform(dataset: DataFrame): DataFrame = {
+
     val outputSchema = transformSchema(dataset.schema)
     val metadata = outputSchema($(outputCol)).metadata
     val split =
@@ -41,7 +42,7 @@ class SentenceDetector(override val uid: String) extends Transformer with HasInp
       }
 
     dataset.select(col("*"),split(col($(inputCol))).as($(outputCol),metadata))
-
+    
   }
 
   override def copy(extra: ParamMap): SentenceDetector = defaultCopy(extra)

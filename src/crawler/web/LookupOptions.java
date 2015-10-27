@@ -22,6 +22,7 @@ public class LookupOptions implements Serializable {
     public static String SKIP = "SKIP";
 
     public static String ARTICLE = "ARTICLE";
+    public static String ARTICLEID = "ARTICLEID";
     public static String ARTICLETEXT = "ARTICLETEXT";
     public static String ARTICLEPARAGRAPH = "ARTICLEPARAGRAPH";
     public static String ARTICLELINK = "ARTICLELINK";
@@ -50,6 +51,19 @@ public class LookupOptions implements Serializable {
     public static String TWEETDIRECTORY = "resources/tweets";
     public static String REUTERSDIRECTORY = "resources/reuters";
     public static String REUTERSSOURCEDIRECTORY = "resources/source/";
+
+    public static String PANTRAINDIRECTORY = "resources/pan/sources/train/";
+    public static String PANTRAINSOURCEDIRECTORY = "resources/pan/training/";
+
+    public static String PANTESTDIRECTORY = "resources/pan/sources/test/";
+    public static String PANTESTSOURCEDIRECTORY = "resources/pan/testing/texts/";
+    public static String PANTESTAUTHORSOURCEDIRECTORY = "resources/pan/testing/authors/";
+
+    public static String PANVALIDDIRECTORY = "resources/pan/sources/valid/";
+    public static String PANVALIDSOURCEDIRECTORY = "resources/pan/validation/texts/";
+    public static String PANVALIDAUTHORSSOURCEDIRECTORY = "resources/pan/validation/authors/";
+
+
 
     public static String GENRESPORTS = "sports";
     public static String GENRETRAVEL = "travel";

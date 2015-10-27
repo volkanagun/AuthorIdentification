@@ -16,7 +16,9 @@ public class LookupPattern implements Serializable {
     private String startRegex, endRegex;
     private String startMarker, endMarker;
     private String value;
+    private String[] regex, replaces;
     private Integer nth, mth;
+    private boolean removeTags = true;
 
     private List<LookupPattern> subpatterns;
 
@@ -35,10 +37,9 @@ public class LookupPattern implements Serializable {
         this.subpatterns = new ArrayList<>();
     }
 
-    public String regexifier(String regex) {
+    private String regexifier(String regex) {
         regex = regex.replaceAll("\\s", "\\\\s");
         regex = regex.replaceAll("\\-", "\\\\-");
-
 
         return regex;
     }
@@ -55,6 +56,33 @@ public class LookupPattern implements Serializable {
 
     public LookupPattern setValue(String value) {
         this.value = value;
+        return this;
+    }
+
+    public String[] getRegex() {
+        return regex;
+    }
+
+    public LookupPattern setRegex(String[] regex) {
+        this.regex = regex;
+        return this;
+    }
+
+    public String[] getReplaces() {
+        return replaces;
+    }
+
+    public LookupPattern setReplaces(String[] replaces) {
+        this.replaces = replaces;
+        return this;
+    }
+
+    public boolean isRemoveTags() {
+        return removeTags;
+    }
+
+    public LookupPattern setRemoveTags(boolean removeTags) {
+        this.removeTags = removeTags;
         return this;
     }
 
@@ -146,6 +174,10 @@ public class LookupPattern implements Serializable {
         return value != null;
     }
 
+    public boolean isRegex() {
+        return replaces != null && regex != null;
+    }
+
     public boolean isNth() {
         return nth != null;
     }
@@ -165,6 +197,7 @@ public class LookupPattern implements Serializable {
 
         if (subpatterns.isEmpty()) {
             for (String partialResult : partialResults) {
+
                 lookupResults.add(new LookupResult(type, label, partialResult));
             }
         } else {
@@ -186,6 +219,14 @@ public class LookupPattern implements Serializable {
         return lookupResults;
     }
 
+    private String getReplaces(String result) {
+        if (isRegex()) {
+            for (int i = 0; i < regex.length; i++) {
+                result = result.replaceAll(regex[i], replaces[i]);
+            }
+        }
+        return result;
+    }
 
     private List<String> getResults(Map<String, String> propertyMap, String partial) {
         ArrayList<String> resultList = new ArrayList<>();
@@ -195,21 +236,31 @@ public class LookupPattern implements Serializable {
             } else if (type.equals(LookupOptions.LOOKUP)) {
                 if (value != null && propertyMap.containsKey(value))
                     resultList.add(propertyMap.get(value));
-
             }
         } else if (!type.equals(LookupOptions.TEXT) && startMarker != null && endMarker != null) {
             TextPattern.obtainPatterns(startRegex, endRegex, startMarker, endMarker, partial, resultList);
         } else if (!type.equals(LookupOptions.TEXT)) {
             TextPattern.obtainPatterns(startRegex, endRegex, false, partial, resultList);
         } else {
-            TextPattern.obtainPatterns(startRegex, endRegex, true, partial, resultList);
+            TextPattern.obtainPatterns(startRegex, endRegex, removeTags, partial, resultList);
         }
 
 
         if (isNth() && nth < resultList.size()) {
             List<String> subList = new ArrayList<>();
             for (int i = nth; i < Math.min(mth, resultList.size()); i++) {
-                String result = resultList.get(i);
+                String result = getReplaces(resultList.get(i));
+
+                subList.add(result);
+            }
+            resultList.clear();
+            resultList.addAll(subList);
+        }
+
+        if (isRegex()) {
+            List<String> subList = new ArrayList<>();
+            for (int i = 0; i < resultList.size(); i++) {
+                String result = getReplaces(resultList.get(i));
                 subList.add(result);
             }
             resultList.clear();

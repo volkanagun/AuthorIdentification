@@ -13,10 +13,12 @@ public class Regex implements Serializable{
     private String regex;
     private String label;
     private String replace;
+
     private Pattern pattern;
     private boolean rule;
 
-    public Regex(String label, String regex, String replace) {
+    public Regex(String label, String regex, String replace)
+    {
         this.regex = regex;
         this.label = label;
         this.replace = replace;

@@ -31,8 +31,6 @@ public class Example implements Serializable {
     public List<Rule> ruleNumber = Rule.createRule("numberDot", ruleNumberDot, new Regex[]{numberRegex});
     public List<Rule> ruleNumberRec = Rule.createRule("numberDot", ruleNumberDot, ruleNumber);
 
-
-
     public List<Rule> ruleAbbrvDot = Rule.createRule("abbrvDot", new Regex[]{uppercaseLetter, dotPunctuation});
     public List<Rule> ruleAbbrvRec = Rule.createRule("abbrvRec", ruleAbbrvDot, ruleAbbrvDot);
 
@@ -73,7 +71,7 @@ public class Example implements Serializable {
         for (String token : tokens) {
             System.out.print(" " + token);
         }
-        int debug = 0;
+
     }
 
     /*private String month(String value){

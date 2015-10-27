@@ -54,8 +54,6 @@ public class ReutersPipeLine implements Serializable {
         detector.setOutputCol("sentences");
 
 
-
-
         DecisionTreeClassifier dc = new DecisionTreeClassifier();
         dc.setLabelCol("label");
 

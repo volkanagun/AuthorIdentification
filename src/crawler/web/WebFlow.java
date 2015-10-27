@@ -3,11 +3,8 @@ package crawler.web;
 import structures.Document;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created by wolf on 02.07.2015.
@@ -413,6 +410,68 @@ public class WebFlow implements Serializable, Callable<Boolean> {
         WebFlow webFlow = new WebFlow(mainTemplate);
         return webFlow;
     }
+
+    //</editor-fold>
+    ///////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
+    //<editor-fold defaultstate="collapsed" desc="PAN2011">
+
+    public static WebFlow buildForPAN2011Train(){
+        WebTemplate mainTemplate = new WebTemplate(LookupOptions.PANTRAINDIRECTORY,"LargeTrain",LookupOptions.EMPTYDOMAIN);
+
+        LookupPattern articlePattern = new LookupPattern(LookupOptions.CONTAINER,LookupOptions.ARTICLE,"<text.*?","</text>")
+                .setStartEndMarker("<text","</text>")
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLEID,"file=\"","\">").setNth(0))
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<author id=\"", "\"/>"))
+                .addPattern(new LookupPattern(LookupOptions.TEXT,LookupOptions.ARTICLETEXT,"<body>","</body>")
+                        .setRegex(new String[]{"&","<",">","'","\""}).setReplaces(new String[]{"&#38;","&lt;","&gt;","&#39;","&#34;"}));
+
+        mainTemplate.addFolder(LookupOptions.PANTRAINSOURCEDIRECTORY);
+        mainTemplate.setMainPattern(articlePattern);
+        mainTemplate.setType(Document.PAN);
+        WebFlow webFlow = new WebFlow(mainTemplate);
+
+        return webFlow;
+    }
+
+    public static WebFlow buildForPAN2011Test(){
+        WebTemplate mainTemplate = new WebTemplate(LookupOptions.PANTESTDIRECTORY,"LargeTest",LookupOptions.EMPTYDOMAIN);
+
+        LookupPattern articlePattern = new LookupPattern(LookupOptions.CONTAINER, LookupOptions.ARTICLE,"<text.*?","</text>")
+                .setStartEndMarker("<text","</text>")
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLEID,"file=\"","\">").setNth(0))
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<author id=\"", "\"/>"))
+                .addPattern(new LookupPattern(LookupOptions.TEXT,LookupOptions.ARTICLETEXT,"<body>","</body>")
+                        .setRegex(new String[]{"&","<NAME/>","<.*?>"}).setReplaces(new String[]{"&#38;","NamedEntity",""})
+                        .setRemoveTags(false));
+
+        mainTemplate.addFolder(LookupOptions.PANTESTSOURCEDIRECTORY);
+        mainTemplate.setMainPattern(articlePattern);
+        mainTemplate.setType(Document.PAN);
+        WebFlow webFlow = new WebFlow(mainTemplate);
+
+        return webFlow;
+    }
+
+    public static WebFlow buildForPAN2011Validation(){
+        WebTemplate mainTemplate = new WebTemplate(LookupOptions.PANVALIDDIRECTORY,"LargeValid",LookupOptions.EMPTYDOMAIN);
+
+        LookupPattern articlePattern = new LookupPattern(LookupOptions.CONTAINER,LookupOptions.ARTICLE,"<text.*?","</text>")
+                .setStartEndMarker("<text","</text>")
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLEID,"file=\"","\">").setNth(0))
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<author id=\"", "\"/>"))
+                .addPattern(new LookupPattern(LookupOptions.TEXT,LookupOptions.ARTICLETEXT,"<body>","</body>")
+                        .setRegex(new String[]{"&", "<", ">", "'", "\""}).setReplaces(new String[]{"&#38;","&lt;","&gt;","&#39;","&#34;"}));
+
+        mainTemplate.addFolder(LookupOptions.PANVALIDSOURCEDIRECTORY);
+        mainTemplate.setMainPattern(articlePattern);
+        mainTemplate.setType(Document.PAN);
+        WebFlow webFlow = new WebFlow(mainTemplate);
+        return webFlow;
+    }
     //</editor-fold>
     ///////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////
@@ -444,7 +503,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 //
 //        service.shutdown();
 
-        WebFlow flowSource = buildForReuters();
+        WebFlow flowSource = buildForPAN2011Test();
         flowSource.execute();
 
     }

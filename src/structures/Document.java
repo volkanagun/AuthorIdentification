@@ -9,11 +9,14 @@ public class Document implements Serializable {
     public static String TWEET = "T";
     public static String BLOG = "B";
     public static String REUTORS = "R";
+    public static String PAN = "P";
     public static String ARTICLE = "A";
+    public static String UNKNOWN = "UNKNOWN";
 
     protected String type;
     protected String author;
     protected String text;
+    protected String docid;
 
     public Document() {
     }
@@ -23,7 +26,19 @@ public class Document implements Serializable {
         this.text = text;
     }
 
+    public Document(String docid, String type,String text) {
+        this.docid = docid;
+        this.text = text;
+        this.type = type;
+        this.author = UNKNOWN;
+    }
 
+    public Document(String docid, String type,String text,  String author) {
+        this.docid = docid;
+        this.text = text;
+        this.type = type;
+        this.author = author;
+    }
 
     public String getType() {
         return type;
