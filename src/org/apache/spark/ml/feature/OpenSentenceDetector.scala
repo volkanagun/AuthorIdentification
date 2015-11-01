@@ -1,9 +1,8 @@
 package org.apache.spark.ml.feature
 
-import org.apache.spark.ml.classification.LogisticRegression
+
 
 import scala.collection.{mutable, JavaConversions}
-import scala.collection.JavaConversions._
 import models.opennlp.SentenceDetectorML
 import org.apache.spark.annotation.{DeveloperApi, Experimental}
 import org.apache.spark.ml.Transformer
@@ -18,7 +17,7 @@ import org.apache.spark.sql.types.{StructField, StringType, ArrayType, StructTyp
  * Created by wolf on 16.09.2015.
  */
 @Experimental
-class SentenceDetector(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
+class OpenSentenceDetector(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
   def this() = this(Identifiable.randomUID("sentenceDetector"))
 
@@ -37,15 +36,16 @@ class SentenceDetector(override val uid: String) extends Transformer with HasInp
     val split =
       functions.udf {
         text: String => {
-          sentenceDetectorML.fit(text);
+          sentenceDetectorML.fit(text).toSeq
         }
+
       }
 
-    dataset.select(col("*"),split(col($(inputCol))).as($(outputCol),metadata))
-    
+    dataset.select(col("*"), split(col($(inputCol))).as($(outputCol), metadata))
+
   }
 
-  override def copy(extra: ParamMap): SentenceDetector = defaultCopy(extra)
+  override def copy(extra: ParamMap): OpenSentenceDetector = defaultCopy(extra)
 
   @DeveloperApi
   override def transformSchema(schema: StructType): StructType = {

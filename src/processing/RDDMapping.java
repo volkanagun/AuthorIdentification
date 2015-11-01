@@ -63,7 +63,6 @@ public class RDDMapping implements Serializable {
     //////////////////////////////////////////////////////////
 
 
-
     public static class GroupByPairAuthorStats implements Function<DocStats,String>{
 
         @Override

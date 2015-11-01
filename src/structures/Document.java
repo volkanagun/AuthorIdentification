@@ -40,6 +40,14 @@ public class Document implements Serializable {
         this.author = author;
     }
 
+    public String getDocid() {
+        return docid;
+    }
+
+    public void setDocid(String docid) {
+        this.docid = docid;
+    }
+
     public String getType() {
         return type;
     }

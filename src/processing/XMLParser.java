@@ -9,10 +9,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import structures.Article;
-import structures.Blog;
-import structures.Reuters;
-import structures.Tweet;
+import structures.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -67,6 +64,52 @@ public class XMLParser implements Serializable {
                     }
                 }
 
+
+            }
+        } catch (ParserConfigurationException e) {
+            System.err.println("ERROR!! in "+filename);
+
+        } catch (SAXException e) {
+            System.err.println("ERROR!! in "+filename);
+        } catch (IOException e) {
+            System.err.println("ERROR!! in "+filename);
+        } catch (NullPointerException e) {
+            System.err.println("ERROR!! in "+filename);
+        } catch (Exception ex) {
+            System.err.println("ERROR!! in "+filename);
+        }
+        return anyDocumentList;
+    }
+
+    public static List<PAN> parsePAN(String filename, String text) {
+        //Get the DOM Builder Factory
+
+        List<PAN> anyDocumentList = new ArrayList<>();
+        InputStream stream = inputStream(text);
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = null;
+        try {
+            builder = factory.newDocumentBuilder();
+            Document document = builder.parse(stream);
+            NodeList nodeList = document.getElementsByTagName("ROOT");
+
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node item = nodeList.item(i);
+                Node itemAttribute = item.getAttributes().getNamedItem("LABEL");
+                String attributeValue = itemAttribute.getNodeValue();
+
+                switch (attributeValue) {
+                    case "P":{
+
+                        List<PAN> anyDocument = parsePAN(item);
+                        anyDocumentList.addAll(anyDocument);
+
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+                }
 
             }
         } catch (ParserConfigurationException e) {
@@ -340,6 +383,59 @@ public class XMLParser implements Serializable {
         }
 
         return reutersList;
+    }
+
+    public static List<PAN> parsePAN(Node node){
+        PAN panDocument= null;
+        List<PAN> panList = new ArrayList<>();
+        NodeList nodeList = ((Element) node).getElementsByTagName("RESULT");
+
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Element item = (Element) nodeList.item(i);
+            Node itemAttribute = item.getAttributes().getNamedItem("LABEL");
+            String attributeValue = itemAttribute.getNodeValue();
+
+            switch (attributeValue) {
+                case "ARTICLE": {
+                    if (panDocument != null) {
+                        panList.add(panDocument);
+                        panDocument = new PAN();
+                        break;
+                    } else {
+                        panDocument = new PAN();
+                        break;
+                    }
+                }
+
+                case "ARTICLEID": {
+                    String docid = item.getTextContent();
+                    if (docid != null) {
+                        docid = docid.trim();
+                        panDocument.setDocid(docid);
+                    }
+                    break;
+                }
+                case "ARTICLETEXT": {
+                    String text = item.getTextContent();
+                    if (text != null)
+                        panDocument.setText(text);
+                    break;
+                }
+
+                case "AUTHORNAME":{
+                    String author = item.getTextContent();
+                    if (author != null)
+                        panDocument.setAuthor(author);
+                    break;
+                }
+            }
+        }
+
+        if (panDocument != null) {
+            panList.add(panDocument);
+        }
+
+        return panList;
     }
 
 

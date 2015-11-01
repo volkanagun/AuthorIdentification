@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Created by wolf on 26.06.2015.
  */
-public class TurkishTokenizer implements Serializable {
+public class RuleTokenizer implements Serializable {
 
     public static String NUMBER = "NUMBER";
 
@@ -28,24 +28,20 @@ public class TurkishTokenizer implements Serializable {
     public Regex someLetter = new Regex("someLetter", "\\p{L}+", "$1");
 
     public Regex moneySymbol = new Regex("moneySymbol", "(\\$|ман|BZ$|$b|лв|¥|₡|Kč|£|€|¢|₩|ден|₮|₦|฿|₤)", "$1");
-    public Regex abbreviation = new Regex("abbreviation", "(Ph\\.[Dd]\\.|[Dd]r\\.)", "$1");
-
-    public List<Rule> ruleNumberDot = Rule.createRule("numberDot", new Regex[]{numberRegex, dotCommaPunctuation});
-    public List<Rule> ruleNumber = Rule.createRule("numberDot", ruleNumberDot, new Regex[]{numberRegex});
-    public List<Rule> ruleNumberRec = Rule.createRule("numberDot", ruleNumberDot, ruleNumber);
-    public List<Rule> ruleAbbrvDot = Rule.createRule("abbrvDot", new Regex[]{uppercaseLetter, dotPunctuation});
-    public List<Rule> ruleAbbrvRec = Rule.createRule("abbrvRec", ruleAbbrvDot, ruleAbbrvDot);
+    public Regex abbreviation = new Regex("abbreviation", "(Ph[Dd]\\.|[Dd]r\\.|Mr\\.|Mrs\\.|Ms.)", "$1");
 
     public Rule letters = Rule.createRule(new Regex("LETTERS","(\\p{L}+)","$1"));
+    public Rule repeatingPunc = Rule.createRule(repeatingPunctuation);
 
     //Tokenize punctuations
     //Numbers, Abbreviations
     //Split by space
     private Engine engine;
 
-    public TurkishTokenizer() {
+    public RuleTokenizer() {
         this.engine = new Engine();
         this.engine.addRule(letters);
+        this.engine.addRule(repeatingPunc);
 
 
         //Rules
@@ -68,9 +64,9 @@ public class TurkishTokenizer implements Serializable {
     }
 
     public static void main(String[] args) {
-        TurkishTokenizer tokenizer = new TurkishTokenizer();
+        RuleTokenizer tokenizer = new RuleTokenizer();
 
-        String text = "U.S. 1000.000.000,00$ PhD. Ali Korkar icin odeme yaptilar...";
+        String text = "U.S. 1000.000.000,00$ PhD... Ali Korkar icin odeme yaptilar...";
         String[] tokens = tokenizer.tokenize(text);
 
         for (String token : tokens) {

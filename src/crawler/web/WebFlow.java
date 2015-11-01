@@ -427,7 +427,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLEID,"file=\"","\">").setNth(0))
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<author id=\"", "\"/>"))
                 .addPattern(new LookupPattern(LookupOptions.TEXT,LookupOptions.ARTICLETEXT,"<body>","</body>")
-                        .setRegex(new String[]{"&","<",">","'","\""}).setReplaces(new String[]{"&#38;","&lt;","&gt;","&#39;","&#34;"}));
+                        .setRegex(new String[]{"&","<NAME/>"}).setReplaces(new String[]{"&#38;","NamedEntity"}));
 
         mainTemplate.addFolder(LookupOptions.PANTRAINSOURCEDIRECTORY);
         mainTemplate.setMainPattern(articlePattern);
@@ -503,7 +503,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 //
 //        service.shutdown();
 
-        WebFlow flowSource = buildForPAN2011Test();
+        WebFlow flowSource = buildForPAN2011Train();
         flowSource.execute();
 
     }

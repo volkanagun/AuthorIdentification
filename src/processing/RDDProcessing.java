@@ -1,6 +1,10 @@
 package processing;
 
 import models.opennlp.SentenceDetectorML;
+import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.rdd.RDD;
+import structures.*;
+import structures.summary.PANDoc;
 import util.PrintBuffer;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.spark.SparkConf;
@@ -12,10 +16,6 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
 import processing.comparators.TupleSizeComparator;
 import scala.Tuple2;
-import structures.Article;
-import structures.Blog;
-import structures.Document;
-import structures.Reuters;
 import structures.stats.AuthorStats;
 import structures.stats.DocStats;
 import structures.summary.ReutersDoc;
@@ -34,7 +34,12 @@ public class RDDProcessing implements Serializable {
     private String BLOGDIRECTORY = "resources/blogs/blog-text*";
     private String ARTICLEDIRECTORY = "resources/articles/article-text*";
     private String REUTERSDIRECTORY = "resources/reuters/reuters-article*";
+
     private String TWEETDIRECTORY = "resources/twitter/twitter*";
+    private String PANTRAINDIRECTORY = "resources/pan/sources/train/*";
+    private String PANTESTDIRECTORY = "resources/pan/sources/test/*";
+    private String PANVALIDATEDIRECTORY = "resources/pan/sources/validate/*";
+
 
     public RDDProcessing() {
 
@@ -84,11 +89,18 @@ public class RDDProcessing implements Serializable {
         return sparkContext.wholeTextFiles(directory);
     }
 
-    protected JavaPairRDD<String, String> loadXML(JavaSparkContext sparkContext) {
-        return loadXML(sparkContext, REUTERSDIRECTORY);
+    protected JavaPairRDD<String, String> loadXML(JavaSparkContext sparkContext, String[] directories) {
+        //return loadXML(sparkContext, REUTERSDIRECTORY);
         //loadXML(sparkContext, BLOGDIRECTORY).union(loadXML(sparkContext, ARTICLEDIRECTORY));
         //.union(loadXML(sparkContext, TWEETDIRECTORY));
-
+        if (directories.length == 0) return null;
+        else {
+            JavaPairRDD<String, String> xmlRDD = loadXML(sparkContext, directories[0]);
+            for (int i = 1; i < directories.length; i++) {
+                xmlRDD = xmlRDD.union(loadXML(sparkContext, directories[i]));
+            }
+            return xmlRDD;
+        }
     }
 
     /**
@@ -174,6 +186,97 @@ public class RDDProcessing implements Serializable {
 
     ///////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////
+    //<editor-fold defaultstate="collapsed" desc="PAN Processing">
+
+    /**
+     * Load XML Document as RDD, find unknown pairs
+     * @param sparkContext
+     * @param buffer
+     * @return
+     */
+    public RDD<PANDoc> panRDD(JavaSparkContext sparkContext, PrintBuffer buffer) {
+       return panRDD(loadXML(sparkContext,PANTRAINDIRECTORY)).rdd();
+       //loadXML(sparkContext,PANTESTDIRECTORY);
+       //loadXML(sparkContext,PANVALIDATEDIRECTORY);
+    }
+
+    private JavaRDD<PANDoc> panRDD(JavaPairRDD<String, String> docRDD){
+        JavaRDD<PAN> panRDD = docRDD.flatMap(new FlatMapFunction<Tuple2<String, String>, PAN>() {
+            @Override
+            public Iterable<PAN> call(Tuple2<String, String> stringStringTuple2) throws Exception {
+                String filename = stringStringTuple2._1();
+                String text = stringStringTuple2._2();
+
+                return XMLParser.parsePAN(filename, text);
+            }
+        });
+
+        JavaRDD<PAN> bothRDD = panRDD.filter(new Function<PAN, Boolean>() {
+            @Override
+            public Boolean call(PAN pan) throws Exception {
+                return pan.knownAuthorText();
+            }
+        });
+
+        final JavaPairRDD<String, String> docAuthorRDD = panRDD.filter(new Function<PAN, Boolean>() {
+            @Override
+            public Boolean call(PAN pan) throws Exception {
+                return pan.authorDocPair();
+            }
+        }).mapToPair(new PairFunction<PAN, String, String>() {
+            @Override
+            public Tuple2<String, String> call(PAN pan) throws Exception {
+                return new Tuple2<String, String>(pan.getDocid(),pan.getAuthor());
+            }
+        });
+
+        JavaRDD<PAN> unknownAuthorRDD = panRDD.filter(new Function<PAN, Boolean>() {
+            @Override
+            public Boolean call(PAN pan) throws Exception {
+                return pan.unknownAuthorText();
+            }
+        });
+
+        //Scan and find unknown authors
+        unknownAuthorRDD.foreach(new VoidFunction<PAN>() {
+            @Override
+            public void call(PAN pan) throws Exception {
+                List<String> authors = docAuthorRDD.lookup(pan.getDocid());
+                if(!authors.isEmpty()){
+                    pan.setAuthor(authors.get(0));
+                }
+            }
+        });
+
+        JavaRDD<PAN> allRDD = bothRDD.union(unknownAuthorRDD);
+        //Label them by double
+        final List<String> authors = allRDD.map(new Function<PAN, String>() {
+            @Override
+            public String call(PAN pan) throws Exception {
+                return pan.getAuthor();
+            }
+        }).distinct().collect();
+
+        return allRDD.map(new Function<PAN, PANDoc>() {
+            @Override
+            public PANDoc call(PAN pan) throws Exception {
+                String author = pan.getAuthor();
+                String text = pan.getText();
+                String docid = pan.getDocid();
+                double label = authors.indexOf(author);
+                return new PANDoc(docid,label,text);
+            }
+        });
+    }
+
+
+    //</editor-fold>
+    ///////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
+
+
+    ///////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
     //<editor-fold defaultstate="collapsed" desc="Reuters Processing">
 
     /**
@@ -189,9 +292,8 @@ public class RDDProcessing implements Serializable {
         final SentenceDetectorML sentenceDetectorML = new SentenceDetectorML();
 
         //Load files and parse documents
-        JavaPairRDD<String, String> filesRDD = loadXML(sparkContext);
-        JavaRDD<Reuters> reutersRDD = filesRDD.flatMap(new FlatMapFunction<Tuple2<String, String>, Reuters>()
-        {
+        JavaPairRDD<String, String> filesRDD = loadXML(sparkContext, new String[]{REUTERSDIRECTORY});
+        JavaRDD<Reuters> reutersRDD = filesRDD.flatMap(new FlatMapFunction<Tuple2<String, String>, Reuters>() {
             @Override
             public Iterable<Reuters> call(Tuple2<String, String> stringStringTuple2) throws Exception {
                 String filename = stringStringTuple2._1();
@@ -216,6 +318,8 @@ public class RDDProcessing implements Serializable {
                         reutersList.add(reutersDoc);
                     }
                 }
+
+
                 return reutersList;
             }
         });
@@ -241,7 +345,7 @@ public class RDDProcessing implements Serializable {
         for (Tuple2<String, Long> tuple : top10Count) {
             top10Map.put(tuple._1(), labelId);
             labelId++;
-            buffer.addLine(tuple._1() + "->" +labelId+"->"+tuple._2());
+            buffer.addLine(tuple._1() + "->" + labelId + "->" + tuple._2());
         }
 
         List<ReutersDoc> documentList = new ArrayList<>();
@@ -261,6 +365,7 @@ public class RDDProcessing implements Serializable {
     ///////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////
 
+
     public void mainStats(JavaSparkContext sc) {
         final SparkConf conf = initCluster();
 
@@ -268,7 +373,7 @@ public class RDDProcessing implements Serializable {
         RDDProcessing processor = new RDDProcessing();
 
 
-        JavaPairRDD<String, String> filesRDD = processor.loadXML(sparkContext);
+        JavaPairRDD<String, String> filesRDD = processor.loadXML(sparkContext, new String[]{BLOGDIRECTORY,TWEETDIRECTORY,ARTICLEDIRECTORY});
         //JavaRDD<DocStats> docRDD = sparkContext.objectFile("binary/docstats");
 
         JavaRDD<DocStats> docRDD = processor.mapDocStats(filesRDD);
@@ -327,7 +432,7 @@ public class RDDProcessing implements Serializable {
         JavaSparkContext sc = new JavaSparkContext(conf);
         RDDProcessing processing = new RDDProcessing();
         PrintBuffer buffer = new PrintBuffer();
-        processing.reutersRDD(sc, buffer, 10);
+        processing.panRDD(sc,buffer);
 
 
         int debug = 0;

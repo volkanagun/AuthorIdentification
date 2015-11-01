@@ -9,11 +9,23 @@ public class PAN extends Document{
         super(docid, text, Document.PAN);
     }
 
-    public PAN(String docid, String type, String text, String author) {
-        super(docid, type, text, author);
+    public PAN(String docid, String author, String text) {
+        super(docid, Document.PAN, text, author);
     }
 
-    public boolean unknownAuthor(){
-        return author.equals(Document.UNKNOWN);
+    public PAN() {
+        this.setType(Document.PAN);
+    }
+
+    public boolean unknownAuthorText(){
+        return text!=null && author.equals(Document.UNKNOWN);
+    }
+
+    public boolean knownAuthorText(){
+        return text!=null && !unknownAuthorText();
+    }
+
+    public boolean authorDocPair(){
+        return text == null;
     }
 }

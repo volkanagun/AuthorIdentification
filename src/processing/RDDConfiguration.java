@@ -22,10 +22,14 @@ public class RDDConfiguration implements Serializable{
     public static String MinimumDocWordLength = "cleaning.MinimumDocWordLength";
 
 
-    public static String MaxNGramCharLength = "ngrams.MaxNGramCharLength";
-    public static String MinNGramCharLength = "ngrams.MinNGramCharLength";
-    public static String MaxNGramWordLength = "ngrams.MaxNGramWordLength";
-    public static String MinNGramWordLength = "ngrams.MinNGramWordLength";
+    public static String EnableNGramChar = "char-ngrams.Enable";
+    public static String EnableNGramWord = "word-ngrams.Enable";
+
+    public static String MaxNGramCharLength = "char-ngrams.Max";
+    public static String MinNGramCharLength = "char-ngrams.Min";
+
+    public static String MaxNGramWordLength = "word-ngrams.Max";
+    public static String MinNGramWordLength = "word-ngrams.Min";
 
 
     public static Properties properties = new Properties();
@@ -38,58 +42,60 @@ public class RDDConfiguration implements Serializable{
         }
     }
 
+    public Integer getIntegerProperty(String key){
+        String value = properties.getProperty(key);
+        return value!=null?Integer.parseInt(value):-1;
+    }
+
+    public String getStringProperty(String key){
+        String value = properties.getProperty(key);
+        return value!=null?value:"";
+    }
+
+    public Boolean getBooleanProperty(String key){
+        String value = properties.getProperty(key);
+        return value!=null?Boolean.parseBoolean(value):false;
+    }
+
 
     public Integer getMinNumberOfDocsPerAuthor() {
-        String str = properties.getProperty(MinNumberOfDocsPerAuthor);
-        if(str==null)
-            return 10;
-        else
-            return Integer.parseInt(str);
+        return getIntegerProperty(MinNumberOfDocsPerAuthor);
     }
 
     public Integer getMinNumberOfDocsPerBlogAuthor() {
-
-        return Integer.parseInt(properties.getProperty(MinNumberOfDocsPerBlogAuthor));
+        return getIntegerProperty(MinNumberOfDocsPerBlogAuthor);
     }
 
     public Integer getMinNumberOfDocsPerArticleAuthor() {
-        return Integer.parseInt(properties.getProperty(MinNumberOfDocsPerArticleAuthor));
+        return getIntegerProperty(MinNumberOfDocsPerArticleAuthor);
     }
 
     public Integer getMinNumberOfDocsPerTweeterAuthor() {
-        return Integer.parseInt(properties.getProperty(MinNumberOfDocsPerTwitterAuthor));
+        return getIntegerProperty(MinNumberOfDocsPerTwitterAuthor);
     }
 
     public Integer getMaxNumberOfDocsPerAuthor() {
-        return Integer.parseInt(properties.getProperty(MaxNumberOfDocsPerAuthor));
+        return getIntegerProperty(MaxNumberOfDocsPerAuthor);
     }
 
     public Integer getMaxNumberOfDocsPerBlogAuthor() {
-        return Integer.parseInt(properties.getProperty(MaxNumberOfDocsPerBlogAuthor));
+        return getIntegerProperty(MaxNumberOfDocsPerBlogAuthor);
     }
 
     public Integer getMaxNumberOfDocsPerArticleAuthor() {
-        return Integer.parseInt(properties.getProperty(MaxNumberOfDocsPerArticleAuthor));
+        return getIntegerProperty(MaxNumberOfDocsPerArticleAuthor);
     }
 
     public Integer getMaxNumberOfDocsPerTweeterAuthor() {
-        return Integer.parseInt(properties.getProperty(MaxNumberOfDocsPerTwitterAuthor));
+        return getIntegerProperty(MaxNumberOfDocsPerTwitterAuthor);
     }
 
     public Integer getMinimumDocCharLength() {
-        String str = properties.getProperty(MinimumDocCharLength);
-        if(str==null)
-            return 30;
-        else
-            return Integer.parseInt(str);
+        return getIntegerProperty(MinimumDocCharLength);
     }
 
     public Integer getMinimumDocWordLength() {
-        String str = properties.getProperty(MinimumDocWordLength);
-        if(str==null)
-            return 3;
-        else
-            return Integer.parseInt(str);
+        return getIntegerProperty(MinimumDocWordLength);
     }
 
 

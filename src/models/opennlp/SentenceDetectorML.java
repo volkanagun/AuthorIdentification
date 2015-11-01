@@ -5,7 +5,10 @@ import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
 import scala.collection.JavaConversions;
+
+
 import scala.collection.immutable.Seq;
+import scala.collection.mutable.StringBuilder;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -37,10 +40,11 @@ public class SentenceDetectorML implements Serializable{
     }
 
     public String[] fit(String text) {
-
         return sentenceDetector.sentDetect(text);
 
     }
+
+
 
     public void train(final String filename) throws IOException {
         Charset charset = Charset.forName("UTF-8");

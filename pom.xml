@@ -47,25 +47,36 @@
             <version>2.10.4</version>
         </dependency>
 
-        <!--<dependency>
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.10</artifactId>
-            <version>1.4.0</version>
+            <version>1.5.1</version>
         </dependency>
+
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-mllib_2.10</artifactId>
-            <version>1.4.0</version>
+            <version>1.5.1</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.10</artifactId>
-            <version>1.4.0</version>
-        </dependency>-->
+            <version>1.5.1</version>
+        </dependency>
 
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-examples_2.10</artifactId>
+            <version>1.1.1</version>
+        </dependency>
 
+        <dependency>
+            <groupId>com.github.scopt</groupId>
+            <artifactId>scopt_2.10</artifactId>
+            <version>3.2.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -85,7 +96,19 @@
             <version>18.0</version>
         </dependency>-->
 
+        <!--Opennlp-->
+        <dependency>
+            <groupId>org.apache.opennlp</groupId>
+            <artifactId>opennlp-maxent</artifactId>
+            <version>3.0.3</version>
+        </dependency>
 
+
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>4.3.0</version>
+        </dependency>
 
 
 

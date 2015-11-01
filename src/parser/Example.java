@@ -1,6 +1,6 @@
 package parser;
 
-import main.TurkishTokenizer;
+import main.RuleTokenizer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -63,7 +63,7 @@ public class Example implements Serializable {
     }
 
     public static void main(String[] args) {
-        TurkishTokenizer tokenizer = new TurkishTokenizer();
+        RuleTokenizer tokenizer = new RuleTokenizer();
 
         String text = "U.S. 1000.000.000,00$ PhD. Ali Korkar icin odeme yaptilar...";
         String[] tokens = tokenizer.tokenize(text);

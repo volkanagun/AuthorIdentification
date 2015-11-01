@@ -7,9 +7,8 @@ import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.classification.DecisionTreeClassifier;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
 import org.apache.spark.ml.feature.LabelCounter;
-import org.apache.spark.ml.feature.NGram;
-import org.apache.spark.ml.feature.SentenceDetector;
-import org.apache.spark.ml.feature.Tokenizer;
+import org.apache.spark.ml.feature.OpenSentenceDetector;
+import org.apache.spark.ml.feature.OpenTokenizer;
 import org.apache.spark.ml.param.ParamMap;
 import org.apache.spark.ml.tuning.CrossValidator;
 import org.apache.spark.ml.tuning.CrossValidatorModel;
@@ -29,6 +28,8 @@ import java.io.Serializable;
  */
 public class ReutersPipeLine implements Serializable {
 
+
+
     public void pipeline(JavaSparkContext sc, RDDProcessing processing) {
 
         PrintBuffer buffer = new PrintBuffer();
@@ -40,7 +41,7 @@ public class ReutersPipeLine implements Serializable {
         DataFrame trainFrame = trainTestDf[0].cache();
         DataFrame testFrame = trainTestDf[1].cache();
 
-        Tokenizer tokenizer = new Tokenizer()
+        OpenTokenizer tokenizer = new OpenTokenizer()
                 .setInputCol("text")
                 .setOutputCol("words");
 
@@ -49,7 +50,7 @@ public class ReutersPipeLine implements Serializable {
                 .setInputCol(tokenizer.getOutputCol())
                 .setOutputCol("features");
 
-        SentenceDetector detector = new SentenceDetector();
+        OpenSentenceDetector detector = new OpenSentenceDetector();
         detector.setInputCol("text");
         detector.setOutputCol("sentences");
 
