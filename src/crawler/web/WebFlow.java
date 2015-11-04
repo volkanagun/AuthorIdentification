@@ -427,7 +427,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLEID,"file=\"","\">").setNth(0))
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<author id=\"", "\"/>"))
                 .addPattern(new LookupPattern(LookupOptions.TEXT,LookupOptions.ARTICLETEXT,"<body>","</body>")
-                        .setRegex(new String[]{"&","<NAME/>"}).setReplaces(new String[]{"&#38;","NamedEntity"}));
+                        .setRegex(new String[]{"&","<NAME/>",">>","<<"}).setReplaces(new String[]{"&&","NamedEntity","->","<-"}));
 
         mainTemplate.addFolder(LookupOptions.PANLARGEDIRECTORY);
         mainTemplate.setMainPattern(articlePattern);
