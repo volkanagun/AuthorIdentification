@@ -18,14 +18,14 @@ public class PAN extends Document{
     }
 
     public boolean unknownAuthorText(){
-        return text!=null && author.equals(Document.UNKNOWN);
+        return text!=null && (author==null || author.equals(Document.UNKNOWN));
     }
 
     public boolean knownAuthorText(){
-        return text!=null && !unknownAuthorText();
+        return text!=null && author!=null && !author.equals(Document.UNKNOWN);
     }
 
     public boolean authorDocPair(){
-        return text == null;
+        return text == null && author!=null && !author.equals(Document.UNKNOWN);
     }
 }

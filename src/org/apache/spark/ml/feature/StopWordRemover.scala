@@ -28,7 +28,7 @@ import scala.io.Source
  */
 class StopWordRemover(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
-  val filename = "resources/dictionary/stopwords/stopwords.txt"
+  val filename = "/home/wolf/Documents/java-projects/AuthorIdentification/resources/dictionary/stopwords/stopwords.txt"
   lazy val stopwords = load
 
   /** @group setParam */
@@ -48,21 +48,19 @@ class StopWordRemover(override val uid: String) extends Transformer with HasInpu
     val outputSchema = transformSchema(dataset.schema);
     val metadata = outputSchema($(outputCol)).metadata
 
-    val stops = functions.udf {
+    val stopremove = functions.udf {
       sentences: Seq[Seq[String]] => {
         var flatWords = Seq[Seq[String]]()
         sentences.foreach(words => {
           val seq: Seq[String] = words.filter(word => !stopwords.contains(word))
           flatWords = flatWords :+ seq
-
         })
-
         flatWords
       }
     }
 
 
-    dataset.select(col("*"), stops(col($(inputCol))).as($(outputCol), metadata))
+    dataset.select(col("*"), stopremove(col($(inputCol))).as($(outputCol), metadata))
 
   }
 

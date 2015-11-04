@@ -9,9 +9,9 @@ import scala.io.Source
 /**
  * Created by wolf on 30.10.2015.
  */
-class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[String], Seq[String], EmoticonDetector] {
+class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[String], Seq[Seq[String]], EmoticonDetector] {
 
-  val filename = "resources/dictionary/emoticons/emoticons.txt"
+  val filename = "/home/wolf/Documents/java-projects/AuthorIdentification/resources/dictionary/emoticons/emoticons.txt"
   lazy val emoticons = load()
 
   def this() = this(Identifiable.randomUID("emoticons"))
@@ -32,16 +32,16 @@ class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[St
     map
   }
 
-  override protected def createTransformFunc: (Seq[String]) => Seq[String] = {
+  override protected def createTransformFunc: (Seq[String]) => Seq[Seq[String]] = {
     emoticonFinder(_)
   }
 
-  def emoticonFinder(sentences: Seq[String]): Seq[String] = {
+  def emoticonFinder(sentences: Seq[String]): Seq[Seq[String]] = {
     val iter = emoticons.toSeq
-    var emoset = Seq[String]()
+    var emoset = Seq[Seq[String]]()
     sentences.foreach(sentence => {
       val filter = iter.filter(pair=>sentence.contains(pair._1))
-      emoset = emoset ++ filter.map(pair=>pair._2)
+      emoset = emoset :+ filter.map(pair=>pair._2)
     })
 
     emoset
@@ -51,6 +51,6 @@ class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[St
     require(inputType.sameType(ArrayType(StringType)), s"Input type must be ArrayType[StringType] but got $inputType.")
   }
 
-  override protected def outputDataType: DataType = new ArrayType(StringType, false)
+  override protected def outputDataType: DataType = new ArrayType(new ArrayType(StringType, false),false)
 
 }

@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class SentenceDetectorML implements Serializable{
 
-    private String modelFilename = "resources/training/sentences.bin";
+    private String modelFilename = "/home/wolf/Documents/java-projects/AuthorIdentification/resources/training/sentences.bin";
     private SentenceDetectorME sentenceDetector;
 
     public SentenceDetectorML() {

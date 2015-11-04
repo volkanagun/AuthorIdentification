@@ -52,16 +52,9 @@ public class LookupOptions implements Serializable {
     public static String REUTERSDIRECTORY = "resources/reuters";
     public static String REUTERSSOURCEDIRECTORY = "resources/source/";
 
-    public static String PANTRAINDIRECTORY = "resources/pan/sources/train/";
-    public static String PANTRAINSOURCEDIRECTORY = "resources/pan/training/";
+    public static String PANLARGEDIRECTORY = "resources/pan/raw-large/";
+    public static String PANLARGESOURCEDIRECTORY = "resources/pan/sources-large/";
 
-    public static String PANTESTDIRECTORY = "resources/pan/sources/test/";
-    public static String PANTESTSOURCEDIRECTORY = "resources/pan/testing/texts/";
-    public static String PANTESTAUTHORSOURCEDIRECTORY = "resources/pan/testing/authors/";
-
-    public static String PANVALIDDIRECTORY = "resources/pan/sources/valid/";
-    public static String PANVALIDSOURCEDIRECTORY = "resources/pan/validation/texts/";
-    public static String PANVALIDAUTHORSSOURCEDIRECTORY = "resources/pan/validation/authors/";
 
 
 

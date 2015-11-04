@@ -1,16 +1,21 @@
 package org.apache.spark.ml.feature
 
 
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.InputType
-import org.apache.spark.ml.UnaryTransformer
-import org.apache.spark.ml.param.{ParamValidators, IntParam}
-import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.types.{ArrayType, StringType, DataType}
+import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.ml.attribute.AttributeGroup
+import org.apache.spark.ml.param.shared.{HasOutputCol, HasInputCol}
+import org.apache.spark.ml.{Transformer, UnaryTransformer}
+import org.apache.spark.ml.param.{ParamMap, ParamValidators, IntParam}
+import org.apache.spark.ml.util.{SchemaUtils, Identifiable}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.sql.{functions, DataFrame}
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.functions.col
 
 /**
  * Created by wolf on 30.10.2015.
  */
-class WordLengthCount(override val uid: String) extends UnaryTransformer[Seq[Seq[String]], Array[String], WordLengthCount] {
+class WordLengthCount(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
   def this() = this(Identifiable.randomUID("word-length"))
 
@@ -25,18 +30,48 @@ class WordLengthCount(override val uid: String) extends UnaryTransformer[Seq[Seq
 
   def getMinWordLength: Int = $(minWordLength)
 
-  override protected def createTransformFunc: (Seq[Seq[String]]) => Array[String] = {
-    wordLength(_)
+  /** @group setParam */
+  def setInputCol(value: String): this.type = set(inputCol, value)
+
+  /** @group setParam */
+  def setOutputCol(value: String): this.type = set(outputCol, value)
+
+
+  val numFeatures = new IntParam(this, "numFeatures", "number of features (> 0)",
+    ParamValidators.gt(0))
+
+  setDefault(numFeatures -> (1 << 18))
+
+  override def transform(dataset: DataFrame): DataFrame = {
+    val outputSchema = transformSchema(dataset.schema)
+    val metadata = outputSchema($(outputCol)).metadata
+    val wordlength = functions.udf {
+      sentences: Seq[Seq[String]] => {
+        wordgrams(sentences)
+      }
+    }
+
+    dataset.select(col("*"), wordlength(col($(inputCol))).as($(outputCol), metadata))
   }
 
-  def wordLength(sentences: Seq[Seq[String]]): Array[String] = {
-    var main = Map[Int,Int]()
+  override def copy(extra: ParamMap): WordLengthCount = defaultCopy(extra)
+
+  @DeveloperApi
+  override def transformSchema(schema: StructType): StructType = {
+    val inputType = schema($(inputCol)).dataType
+    require(inputType.sameType(ArrayType(ArrayType(StringType, true))), s"Input type must be Array[StringType] but got $inputType.")
+    val attrGroup = new AttributeGroup($(outputCol), $(numFeatures))
+    SchemaUtils.appendColumn(schema, attrGroup.toStructField())
+  }
+
+  def wordgrams(sentences: Seq[Seq[String]]): org.apache.spark.mllib.linalg.Vector = {
+    var main = Map[Int,Double]()
 
     sentences.foreach(sentence => {
-      val lengthMap = sentence.foldLeft(Map.empty[Int, Int]) {
+      val lengthMap = sentence.foldLeft(Map.empty[Int, Double]) {
         (map, word) => {
           if (word.length >= $(minWordLength) && word.length <= $(maxWordLength)) {
-            map + (word.length -> (map.getOrElse(word.length, 0) + 1))
+            map + (word.length -> (map.getOrElse[Double](word.length, 0) + 1))
           }
           else {
             map
@@ -45,23 +80,19 @@ class WordLengthCount(override val uid: String) extends UnaryTransformer[Seq[Seq
       }
 
       main = main ++ lengthMap.map {
-        case (k, v) => k -> (v + main.getOrElse(k, 0))
+        case (k, v) => k -> (v + main.getOrElse[Double](k, 0))
       }
 
     })
 
-    var vector = Vector.fill[String]($(maxWordLength)+1)("0")
+    var vector = Vector.fill[Double]($(maxWordLength)+1)(0)
 
     main.foreach {
-      case (k, v) => vector = vector.updated(k, v.toString)
+      case (k, v) => vector = vector.updated(k, v)
     }
 
-    vector.toArray
+    Vectors.dense(vector.toArray)
   }
 
-  override protected def validateInputType(inputType: DataType): Unit = {
-    require(inputType.sameType(ArrayType(ArrayType(StringType))), s"Input type must be Array[Array[String]] but got $inputType.")
-  }
 
-  override protected def outputDataType: DataType = new ArrayType(StringType, false)
 }

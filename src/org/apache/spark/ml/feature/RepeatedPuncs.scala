@@ -31,10 +31,10 @@ class RepeatedPuncs(override val uid: String) extends Transformer with HasInputC
     val function =
       functions.udf {
         sentences: Seq[String] => {
-          var puncs : Array[String] = Array()
+          var puncs : Seq[Seq[String]] = Seq()
           sentences.foreach(sentence => {
-            val matches = puncpattern.findAllIn(sentence).toArray
-            puncs = puncs.++(matches)
+            val matches = puncpattern.findAllIn(sentence).toSeq
+            puncs = puncs:+matches
           })
 
           puncs
@@ -51,7 +51,7 @@ class RepeatedPuncs(override val uid: String) extends Transformer with HasInputC
   override def transformSchema(schema: StructType): StructType = {
     val inputType = schema($(inputCol)).dataType
     require(inputType.sameType(ArrayType(StringType, true)), s"Input type must be Array[String] but got $inputType.")
-    val outputFields = schema.fields :+ StructField($(outputCol), ArrayType(StringType, true), schema($(inputCol)).nullable)
+    val outputFields = schema.fields :+ StructField($(outputCol), ArrayType(ArrayType(StringType, true)), schema($(inputCol)).nullable)
     StructType(outputFields)
   }
 }

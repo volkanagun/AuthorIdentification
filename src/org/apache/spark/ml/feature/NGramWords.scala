@@ -66,5 +66,5 @@ class NGramWords(override val uid:String) extends Transformer with HasInputCol w
     StructType(outputFields)
   }
 
-  override def copy(extra: ParamMap): OpenSentenceDetector = defaultCopy(extra)
+  override def copy(extra: ParamMap): NGramWords = defaultCopy(extra)
 }

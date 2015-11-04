@@ -2,7 +2,6 @@ package processing;
 
 import models.opennlp.SentenceDetectorML;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.rdd.RDD;
 import structures.*;
 import structures.summary.PANDoc;
 import util.PrintBuffer;
@@ -36,9 +35,8 @@ public class RDDProcessing implements Serializable {
     private String REUTERSDIRECTORY = "resources/reuters/reuters-article*";
 
     private String TWEETDIRECTORY = "resources/twitter/twitter*";
-    private String PANTRAINDIRECTORY = "resources/pan/sources/train/*";
-    private String PANTESTDIRECTORY = "resources/pan/sources/test/*";
-    private String PANVALIDATEDIRECTORY = "resources/pan/sources/validate/*";
+    private String PANBINARYDIRECTORY = "resources/pan/binary-large";
+    private String PANLARGEDIRECTORY = "resources/pan/sources-large/*";
 
 
     public RDDProcessing() {
@@ -188,16 +186,25 @@ public class RDDProcessing implements Serializable {
     //////////////////////////////////////////////////////////
     //<editor-fold defaultstate="collapsed" desc="PAN Processing">
 
+    public JavaRDD<PANDoc> panRDDLoad(JavaSparkContext sc){
+        return sc.objectFile(PANBINARYDIRECTORY);
+    }
+
     /**
-     * Load XML Document as RDD, find unknown pairs
+     * Load XML Document as RDD, find unknown pairs, save them
      * @param sparkContext
-     * @param buffer
+
      * @return
      */
-    public RDD<PANDoc> panRDD(JavaSparkContext sparkContext, PrintBuffer buffer) {
-       return panRDD(loadXML(sparkContext,PANTRAINDIRECTORY)).rdd();
-       //loadXML(sparkContext,PANTESTDIRECTORY);
-       //loadXML(sparkContext,PANVALIDATEDIRECTORY);
+    public JavaRDD<PANDoc> panRDD(JavaSparkContext sparkContext) {
+        JavaRDD<PANDoc> docJavaRDD = panRDD(loadXML(sparkContext, PANLARGEDIRECTORY));
+        return docJavaRDD;
+    }
+
+    public JavaRDD<PANDoc> panRDDSave(JavaSparkContext sparkContext) {
+        JavaRDD<PANDoc> docJavaRDD = panRDD(loadXML(sparkContext, PANLARGEDIRECTORY));
+        docJavaRDD.saveAsObjectFile(PANBINARYDIRECTORY);
+        return docJavaRDD;
     }
 
     private JavaRDD<PANDoc> panRDD(JavaPairRDD<String, String> docRDD){
@@ -221,7 +228,7 @@ public class RDDProcessing implements Serializable {
         final JavaPairRDD<String, String> docAuthorRDD = panRDD.filter(new Function<PAN, Boolean>() {
             @Override
             public Boolean call(PAN pan) throws Exception {
-                return pan.authorDocPair();
+                return pan.authorDocPair()  || pan.knownAuthorText();
             }
         }).mapToPair(new PairFunction<PAN, String, String>() {
             @Override
@@ -229,6 +236,8 @@ public class RDDProcessing implements Serializable {
                 return new Tuple2<String, String>(pan.getDocid(),pan.getAuthor());
             }
         });
+
+        final Map<String,String> docAuthorMap = docAuthorRDD.collectAsMap();
 
         JavaRDD<PAN> unknownAuthorRDD = panRDD.filter(new Function<PAN, Boolean>() {
             @Override
@@ -238,21 +247,30 @@ public class RDDProcessing implements Serializable {
         });
 
         //Scan and find unknown authors
-        unknownAuthorRDD.foreach(new VoidFunction<PAN>() {
+        JavaRDD<PAN> knownAuthorRDD = unknownAuthorRDD.map(new Function<PAN, PAN>() {
             @Override
-            public void call(PAN pan) throws Exception {
-                List<String> authors = docAuthorRDD.lookup(pan.getDocid());
-                if(!authors.isEmpty()){
-                    pan.setAuthor(authors.get(0));
+            public PAN call(PAN v1) throws Exception {
+                if (v1.getAuthor() == null && docAuthorMap.get(v1.getDocid()) == null) {
+                    return new PAN(v1.getDocid(), v1.getAuthor(), v1.getText());
+                } else if (docAuthorMap.containsKey(v1.getDocid())) {
+                    return new PAN(v1.getDocid(), docAuthorMap.get(v1.getDocid()), v1.getText());
+                } else {
+                    return v1;
                 }
+            }
+        }).filter(new Function<PAN, Boolean>() {
+            @Override
+            public Boolean call(PAN v1) throws Exception {
+                return v1.getAuthor()!=null;
             }
         });
 
-        JavaRDD<PAN> allRDD = bothRDD.union(unknownAuthorRDD);
+        JavaRDD<PAN> allRDD = bothRDD.union(knownAuthorRDD);
         //Label them by double
         final List<String> authors = allRDD.map(new Function<PAN, String>() {
             @Override
             public String call(PAN pan) throws Exception {
+
                 return pan.getAuthor();
             }
         }).distinct().collect();
@@ -404,12 +422,13 @@ public class RDDProcessing implements Serializable {
     public static SparkConf initCluster() {
         Logger.getLogger("org").setLevel(Level.INFO);
         Logger.getLogger("akka").setLevel(Level.INFO);
-        String sparkHome = "/home/wolf/Documents/apps/spark-1.3.1-bin-hadoop2.4/";
+        String sparkHome = "/home/wolf/Documents/apps/spark-1.5.1-bin-hadoop2.6/";
 
         return new SparkConf()
                 .setAppName("RDDProcessing")
-                .set("spark.executor.memory", "12g")
+                .set("spark.executor.memory", "4g")
                 .set("spark.rdd.compress", "true")
+
                 /*.set("spark.storage.memoryFraction", "1")
                 .set("spark.core.connection.ack.wait.timeout", "300")
                 .set("spark.akka.frameSize", "20")
@@ -420,7 +439,7 @@ public class RDDProcessing implements Serializable {
                 */
                 .setJars(new String[]{"out/AuthorIdentification.jar"})
                 .setSparkHome(sparkHome)
-                .setMaster("spark://192.168.1.2:7077")
+                .setMaster("spark://192.168.1.3:7077")
                         //.setMaster("local[24]")
                 .set("log4j.rootCategory", "INFO");
 
@@ -432,7 +451,7 @@ public class RDDProcessing implements Serializable {
         JavaSparkContext sc = new JavaSparkContext(conf);
         RDDProcessing processing = new RDDProcessing();
         PrintBuffer buffer = new PrintBuffer();
-        processing.panRDD(sc,buffer);
+        processing.panRDDSave(sc);
 
 
         int debug = 0;

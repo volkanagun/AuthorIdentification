@@ -33,7 +33,7 @@ import org.apache.spark.sql.types.{ArrayType, StructType}
  * Maps a sequence of terms to their term frequencies using the hashing trick.
  */
 @Experimental
-class LabelCounter(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
+class ModifiedHashingTF(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
   def this() = this(Identifiable.randomUID("labelCounter"))
 
@@ -62,7 +62,14 @@ class LabelCounter(override val uid: String) extends Transformer with HasInputCo
   override def transform(dataset: DataFrame): DataFrame = {
     val outputSchema = transformSchema(dataset.schema)
     val hashingTF = new feature.HashingTF($(numFeatures))
-    val t = udf { terms: Seq[_] => hashingTF.transform(terms) }
+    val t = udf {
+      sentences:Seq[Seq[String]]=>{
+        var terms = Array[String]()
+        sentences.foreach(words=> terms = terms++words)
+        hashingTF.transform(terms)
+      }
+
+    }
     val metadata = outputSchema($(outputCol)).metadata
     val dframe = dataset.select(col("*"), t(col($(inputCol))).as($(outputCol), metadata))
     dframe
@@ -71,10 +78,10 @@ class LabelCounter(override val uid: String) extends Transformer with HasInputCo
   override def transformSchema(schema: StructType): StructType = {
     val inputType = schema($(inputCol)).dataType
     require(inputType.isInstanceOf[ArrayType],
-      s"The input column must be ArrayType, but got $inputType.")
+      s"The input column must be ArrayType[ArrayType[String]], but got $inputType.")
     val attrGroup = new AttributeGroup($(outputCol), $(numFeatures))
     SchemaUtils.appendColumn(schema, attrGroup.toStructField())
   }
 
-  override def copy(extra: ParamMap): LabelCounter = defaultCopy(extra)
+  override def copy(extra: ParamMap): ModifiedHashingTF = defaultCopy(extra)
 }

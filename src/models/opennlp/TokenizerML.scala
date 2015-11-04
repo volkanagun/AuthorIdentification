@@ -10,8 +10,9 @@ import opennlp.tools.util.{TrainingParameters, PlainTextByLineStream, ObjectStre
 /**
  * Created by wolf on 28.10.2015.
  */
-class TokenizerML() {
-  val modelFilename = "resources/training/en-token.bin"
+class TokenizerML extends Serializable
+{
+  val modelFilename = "/home/wolf/Documents/java-projects/AuthorIdentification/resources/training/en-token.bin"
 
   lazy val tokenizer: TokenizerME = {
     val in = new FileInputStream(modelFilename)

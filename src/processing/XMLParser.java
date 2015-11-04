@@ -432,6 +432,7 @@ public class XMLParser implements Serializable {
         }
 
         if (panDocument != null) {
+
             panList.add(panDocument);
         }
 

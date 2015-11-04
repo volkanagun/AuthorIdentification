@@ -2,12 +2,14 @@ package org.apache.spark.ml.feature
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.attribute.AttributeGroup
+import org.apache.spark.ml.param.{ParamValidators, IntParam, ParamMap}
 import org.apache.spark.ml.param.shared.{HasOutputCol, HasInputCol}
-import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.ml.util.{SchemaUtils, Identifiable}
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{functions, DataFrame}
-import org.apache.spark.sql.types.{StructField, StringType, ArrayType, StructType}
+import org.apache.spark.sql.types._
 
 import scala.util.matching.Regex
 
@@ -25,12 +27,17 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
   def setOutputCol(value: String): this.type = set(outputCol, value)
 
 
+  val numFeatures = new IntParam(this, "numFeatures", "number of features (> 0)",
+    ParamValidators.gt(0))
+
+  setDefault(numFeatures -> (1<<18))
+
   override def transform(dataset: DataFrame): DataFrame = {
     val outputSchema = transformSchema(dataset.schema)
     val metadata = outputSchema($(outputCol)).metadata
     val capitals = functions.udf {
       sentences: Seq[Seq[String]] => {
-        var vector = Vector.fill[Int](10)(0)
+        var vector = Vector.fill[Double](10)(0)
         sentences.foreach(sentence => {
           //lowercase word start
           if (sentence.head.matches("[a-zçöşğüı]\\p{L}+")) {
@@ -82,7 +89,7 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
 
         })
 
-        vector
+        Vectors.dense(vector.toArray)
       }
     }
 
@@ -97,8 +104,11 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
     val inputType = schema($(inputCol)).dataType
     require(inputType.sameType(ArrayType(ArrayType(StringType, true))),
       s"Input type must be Array[Array[String]] but got $inputType.")
-    val outputFields = schema.fields :+ StructField($(outputCol), ArrayType(StringType, false), schema($(inputCol)).nullable)
-    StructType(outputFields)
+    /*val outputFields = schema.fields :+ StructField($(outputCol), ArrayType(DoubleType, false), schema($(inputCol)).nullable)
+    StructType(outputFields)*/
+
+    val attrGroup = new AttributeGroup($(outputCol), $(numFeatures))
+    SchemaUtils.appendColumn(schema, attrGroup.toStructField())
   }
 
 

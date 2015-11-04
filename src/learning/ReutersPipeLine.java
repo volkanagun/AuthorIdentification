@@ -6,7 +6,7 @@ import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.classification.DecisionTreeClassifier;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
-import org.apache.spark.ml.feature.LabelCounter;
+import org.apache.spark.ml.feature.ModifiedHashingTF;
 import org.apache.spark.ml.feature.OpenSentenceDetector;
 import org.apache.spark.ml.feature.OpenTokenizer;
 import org.apache.spark.ml.param.ParamMap;
@@ -45,7 +45,7 @@ public class ReutersPipeLine implements Serializable {
                 .setInputCol("text")
                 .setOutputCol("words");
 
-        LabelCounter hashingTF = new LabelCounter()
+        ModifiedHashingTF hashingTF = new ModifiedHashingTF()
                 .setNumFeatures(1000)
                 .setInputCol(tokenizer.getOutputCol())
                 .setOutputCol("features");
@@ -57,6 +57,7 @@ public class ReutersPipeLine implements Serializable {
 
         DecisionTreeClassifier dc = new DecisionTreeClassifier();
         dc.setLabelCol("label");
+
 
 
         Pipeline pipeline = new Pipeline()
