@@ -46,9 +46,9 @@ class PANPipeline {
 
     val conf = new SparkConf()
       .setAppName("author-identification")
-      .setMaster("local[2]")
-      .set("spark.driver.memory", "64g")
-      .set("spark.executor.memory", "16g")
+      .setMaster("local[8]")
+      .set("spark.driver.memory", "72g")
+      .set("spark.executor.memory", "8g")
       .set("spark.rdd.compress", "true")
       .set("log4j.rootCategory", "INFO");
 
@@ -61,8 +61,15 @@ class PANPipeline {
     val sqlContext: SQLContext = new SQLContext(sc)
     val processing: RDDProcessing = new RDDProcessing()
     val rndSplit: RandomSplit = new RandomSplit("label", Array[Double](0.9, 0.1))
-    val panRDD: RDD[PANDoc] = processing.panRDDLoad(sc)
-    val dtframe = sqlContext.createDataFrame(panRDD, classOf[PANDoc])
+    val panRDD: RDD[PANDoc] = processing.panRDD(sc)
+    val df = sqlContext.createDataFrame(panRDD, classOf[PANDoc])
+
+    val trainFrame = df.filter(df("docid").startsWith("LargeTrain"))
+    //trainFrame.write.save("binary/pan-large-train")
+    //val trainFrame = sqlContext.read.load("binary/large-train")
+    val testFrame = df.filter(df("docid").startsWith("LargeTest"))
+    //testFrame.write.save("binary/pan-large-test")
+    //val testFrame = sqlContext.read.load("binary/large-test")
 
     val sentenceDetector = new OpenSentenceDetector()
       .setInputCol("text")
@@ -71,6 +78,10 @@ class PANPipeline {
     val tokenizer = new OpenTokenizer()
       .setInputCol(sentenceDetector.getOutputCol)
       .setOutputCol("tokens")
+
+    val posser = new OpenPOSTagger()
+      .setInputCol(tokenizer.getOutputCol)
+      .setOutputCol("pos-tags")
 
     //Goes to hashing TF to extract features
     val emoticondetector = new EmoticonDetector()
@@ -92,6 +103,12 @@ class PANPipeline {
       .setMax(4)
       .setMin(2)
 
+    //Goes to hasing TF to extract features
+    val ngramPos = new NGramPOS()
+      .setInputCol(posser.getOutputCol)
+      .setOutputCol("ngram-pos")
+      .setMax(4)
+      .setMin(2)
 
     //Goes to hashing TF to extract features
     val repeatedPuncs = new RepeatedPuncs()
@@ -111,17 +128,21 @@ class PANPipeline {
       .setMaxWordLength(50).setMinWordLength(1)
 
     //Already features in Vector
-    val stopLengths = new MessageLength()
+    val countFeatures = new LengthTokenLevel()
       .setInputCol(tokenizer.getOutputCol)
-      .setOutputCol("stop-length-features")
+      .setOutputCol("count-features")
 
 
     /** ***
       * Hashing TF's for tokens, emoticons,ngram-chars, ngram-words
       */
-    val wordHashingTF = new ModifiedHashingTF()
+    val tokenHashingTF = new ModifiedHashingTF()
       .setNumFeatures(1000).setInputCol(tokenizer.getOutputCol)
       .setOutputCol("token-features")
+
+    val posHashingTF = new HashingTF().setNumFeatures(1000)
+      .setInputCol(posser.getOutputCol)
+      .setOutputCol("pos-features")
 
     val emoHashingTF = new ModifiedHashingTF()
       .setNumFeatures(1000).setInputCol(emoticondetector.getOutputCol)
@@ -131,10 +152,13 @@ class PANPipeline {
       .setNumFeatures(1000).setInputCol(ngramChars.getOutputCol)
       .setOutputCol("ngram-chars-features")
 
-
     val ngramWordHashingTF = new ModifiedHashingTF()
       .setNumFeatures(1000).setInputCol(ngramWords.getOutputCol)
       .setOutputCol("ngram-words-features")
+
+    val ngramPosHashingTF = new HashingTF()
+      .setNumFeatures(1000).setInputCol(ngramPos.getOutputCol)
+      .setOutputCol("ngram-pos-features")
 
     val puncsHashingTF = new ModifiedHashingTF()
       .setNumFeatures(1000).setInputCol(repeatedPuncs.getOutputCol)
@@ -146,14 +170,16 @@ class PANPipeline {
 
     val assembler = new VectorAssembler().setInputCols(
       Array(
-        "token-features",
-        "emo-features",
-        "ngram-chars-features",
-        "ngram-words-features",
-        "punc-features",
-        "word-form-features",
-        "word-length-features",
-        "stop-length-features"))
+        //tokenHashingTF.getOutputCol,
+        posHashingTF.getOutputCol,
+        emoHashingTF.getOutputCol,
+        ngramCharHashingTF.getOutputCol,
+        //ngramWordHashingTF.getOutputCol,
+        ngramPosHashingTF.getOutputCol,
+        puncsHashingTF.getOutputCol,
+        wordForms.getOutputCol,
+        wordLengths.getOutputCol,
+        countFeatures.getOutputCol))
       .setOutputCol("features")
 
     val nvb: NaiveBayes = new NaiveBayes()
@@ -167,28 +193,35 @@ class PANPipeline {
     randomForest.setLabelCol("indexed-label").setFeaturesCol("features")
 
 
-
-
     val pipeline = new Pipeline()
       .setStages(Array[PipelineStage](
-        sentenceDetector, tokenizer,
-        emoticondetector,ngramChars,ngramWords,repeatedPuncs,
+        sentenceDetector, tokenizer,posser,
+        emoticondetector,ngramChars,
+        ngramWords,
+        ngramPos,
+        repeatedPuncs,
         wordForms,
         wordLengths,
-        stopLengths,
-        wordHashingTF,
+        countFeatures,
+        tokenHashingTF,
         emoHashingTF,
+        posHashingTF,
         ngramCharHashingTF,
         ngramWordHashingTF,
+        ngramPosHashingTF,
         puncsHashingTF,
         assembler
         //,stringIndexer,randomForest
       ))
 
 
-    val sink = new WekaARFFSink
-    val transformed = pipeline.fit(dtframe).transform(dtframe)
-    sink.sink(transformed)
+    val wekaSink = new WekaARFFSink
+    val pipelineModel = pipeline.fit(trainFrame)
+    val transformedTrain = pipelineModel.transform(trainFrame)
+    val transformedTest = pipelineModel.transform(testFrame)
+    val labels = wekaSink.sinkTrain("train.arff", transformedTrain)
+    wekaSink.sinkTest("test.arff", labels, transformedTest)
+
 
 
 
@@ -259,7 +292,6 @@ class PANPipeline {
     buffer.addLine("F1-Measure:" + fmeasure)
     buffer.addLine("Confusion:" + matrix.toString())
     buffer.print()
-
   }
 
 }
@@ -268,6 +300,7 @@ object Test {
   def main(args: Array[String]) {
     val pipeline = new PANPipeline()
     val buffer = new PrintBuffer
-    pipeline.pipeline(pipeline.local(), buffer)
+    pipeline.pipeline(pipeline.cluster(), buffer)
+
   }
 }

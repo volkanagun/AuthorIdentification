@@ -141,7 +141,7 @@ class PipelineTests {
       (1, Seq(Seq("Logistic","regression", ":-|", "MODELS","are","neat","??"), Seq("another","lowercase", "start")))
     )).toDF("label", "sentences")
 
-    val stopwords = new MessageLength()
+    val stopwords = new LengthTokenLevel()
 
     stopwords.setInputCol("sentences")
     stopwords.setOutputCol("stopwords")

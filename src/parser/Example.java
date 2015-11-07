@@ -71,7 +71,6 @@ public class Example implements Serializable {
         for (String token : tokens) {
             System.out.print(" " + token);
         }
-
     }
 
     /*private String month(String value){

@@ -32,6 +32,12 @@ class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[St
     map
   }
 
+  def print(): Unit ={
+    emoticons.foreach(p=>{
+      println(p._1+"\t"+p._2)
+    })
+  }
+
   override protected def createTransformFunc: (Seq[String]) => Seq[Seq[String]] = {
     emoticonFinder(_)
   }
@@ -53,4 +59,11 @@ class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[St
 
   override protected def outputDataType: DataType = new ArrayType(new ArrayType(StringType, false),false)
 
+}
+
+object EmoticonDetector{
+  def main(args: Array[String]) {
+    val emo = new EmoticonDetector()
+    emo.print()
+  }
 }

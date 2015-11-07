@@ -37,7 +37,7 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
     val metadata = outputSchema($(outputCol)).metadata
     val capitals = functions.udf {
       sentences: Seq[Seq[String]] => {
-        var vector = Vector.fill[Double](10)(0)
+        var vector = Vector.fill[Double](11)(0)
         sentences.foreach(sentence => {
           //lowercase word start
           if (sentence.head.matches("[a-zçöşğüı]\\p{L}+")) {
@@ -59,6 +59,7 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
             vector = vector.updated(3, vector(3) + 1);
           }
 
+
           //Greetings informal start
           if (sentence.head.toLowerCase.matches("(hello|hi|whats|wassup|hey|howdy|yo)")) {
             vector = vector.updated(4, vector(4) + 1);
@@ -69,23 +70,39 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
             vector = vector.updated(5, vector(5) + 1);
           }
 
+
+
+
+
+
           //Capitalized
           if (sentence.forall(word => word.matches("\\p{Lu}+"))) {
             vector = vector.updated(6, vector(6) + 1);
           }
+
 
           //Upper case start, lower camelcase
           sentence.foreach(word => {
 
             if (word.matches("\\p{Lu}\\p{L}+")) {
               vector = vector.updated(7, vector(7) + 1);
+
             }
 
             if (word.matches("[a-zçöşğüı]+\\p{Lu}")) {
               vector = vector.updated(8, vector(8) + 1);
             }
-
           })
+
+          //Punctuation start
+          if(sentence.head.toLowerCase.matches("\\p{Punct}+")){
+            vector = vector.updated(9, vector(9) + 1);
+          }
+
+          //Question sentences
+          if (sentence.last.matches("\\?")) {
+            vector = vector.updated(10, vector(10) + 1);
+          }
 
         })
 
