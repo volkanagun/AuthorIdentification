@@ -1,7 +1,7 @@
 package org.apache.spark.ml.feature
 
 import com.fasterxml.jackson.module.scala.modifiers.SeqTypeModifier
-import models.opennlp.TokenizerML
+import opennlp.models.TokenizerML
 import opennlp.tools.tokenize.TokenizerME
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer

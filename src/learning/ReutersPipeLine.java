@@ -6,7 +6,7 @@ import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.classification.DecisionTreeClassifier;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
-import org.apache.spark.ml.feature.ModifiedHashingTF;
+import org.apache.spark.ml.feature.ModifiedTFIDF;
 import org.apache.spark.ml.feature.OpenSentenceDetector;
 import org.apache.spark.ml.feature.OpenTokenizer;
 import org.apache.spark.ml.param.ParamMap;
@@ -45,7 +45,7 @@ public class ReutersPipeLine implements Serializable {
                 .setInputCol("text")
                 .setOutputCol("words");
 
-        ModifiedHashingTF hashingTF = new ModifiedHashingTF()
+        ModifiedTFIDF hashingTF = new ModifiedTFIDF()
                 .setNumFeatures(1000)
                 .setInputCol(tokenizer.getOutputCol())
                 .setOutputCol("features");

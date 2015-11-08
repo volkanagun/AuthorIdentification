@@ -25,14 +25,13 @@ public class Example implements Serializable {
     public Regex someLetter = new Regex("someLetter", "\\p{L}+", "$1");
 
     public Regex moneySymbol = new Regex("moneySymbol", "(\\$|ман|BZ$|$b|лв|¥|₡|Kč|£|€|¢|₩|ден|₮|₦|฿|₤)", "$1");
-    public Regex abbreviation = new Regex("abbreviation", "(Ph\\.[Dd]\\.|[Dd]r\\.)", "$1");
+
 
     public List<Rule> ruleNumberDot = Rule.createRule("numberDot", new Regex[]{numberRegex, dotCommaPunctuation});
     public List<Rule> ruleNumber = Rule.createRule("numberDot", ruleNumberDot, new Regex[]{numberRegex});
     public List<Rule> ruleNumberRec = Rule.createRule("numberDot", ruleNumberDot, ruleNumber);
-
-    public List<Rule> ruleAbbrvDot = Rule.createRule("abbrvDot", new Regex[]{uppercaseLetter, dotPunctuation});
-    public List<Rule> ruleAbbrvRec = Rule.createRule("abbrvRec", ruleAbbrvDot, ruleAbbrvDot);
+    public List<Rule> ruleAbbrvDot = Rule.createRule("abbreviation", new Regex[]{uppercaseLetter, dotPunctuation});
+    public List<Rule> ruleAbbrvRec = Rule.createRule("abbreviation", ruleAbbrvDot, ruleAbbrvDot);
 
 
     //Tokenize punctuations
@@ -66,7 +65,7 @@ public class Example implements Serializable {
         RuleTokenizer tokenizer = new RuleTokenizer();
 
         String text = "U.S. 1000.000.000,00$ PhD. Ali Korkar icin odeme yaptilar...";
-        String[] tokens = tokenizer.tokenize(text);
+        String[] tokens = tokenizer.tokenizeDebug(text);
 
         for (String token : tokens) {
             System.out.print(" " + token);

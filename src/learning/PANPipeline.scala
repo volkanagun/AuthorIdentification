@@ -136,31 +136,39 @@ class PANPipeline {
     /** ***
       * Hashing TF's for tokens, emoticons,ngram-chars, ngram-words
       */
-    val tokenHashingTF = new ModifiedHashingTF()
-      .setNumFeatures(1000).setInputCol(tokenizer.getOutputCol)
-      .setOutputCol("token-features")
+    val tokenHashingTF = new ModifiedTFIDF()
+      .setInputCol(tokenizer.getOutputCol)
+      .setOutputCol("token-raw-features")
+
+    val tokenIDF = new IDF().setMinDocFreq(2)
+      .setInputCol("token-raw-features").setOutputCol("token-features")
+
 
     val posHashingTF = new HashingTF().setNumFeatures(1000)
       .setInputCol(posser.getOutputCol)
       .setOutputCol("pos-features")
 
-    val emoHashingTF = new ModifiedHashingTF()
+    val emoHashingTF = new ModifiedTFIDF()
       .setNumFeatures(1000).setInputCol(emoticondetector.getOutputCol)
       .setOutputCol("emo-features")
 
-    val ngramCharHashingTF = new ModifiedHashingTF()
+    val ngramCharHashingTF = new ModifiedTFIDF()
       .setNumFeatures(1000).setInputCol(ngramChars.getOutputCol)
       .setOutputCol("ngram-chars-features")
 
-    val ngramWordHashingTF = new ModifiedHashingTF()
+    val ngramWordHashingTF = new ModifiedTFIDF()
       .setNumFeatures(1000).setInputCol(ngramWords.getOutputCol)
       .setOutputCol("ngram-words-features")
+
+
 
     val ngramPosHashingTF = new HashingTF()
       .setNumFeatures(1000).setInputCol(ngramPos.getOutputCol)
       .setOutputCol("ngram-pos-features")
 
-    val puncsHashingTF = new ModifiedHashingTF()
+
+
+    val puncsHashingTF = new ModifiedTFIDF()
       .setNumFeatures(1000).setInputCol(repeatedPuncs.getOutputCol)
       .setOutputCol("punc-features")
 
@@ -170,11 +178,11 @@ class PANPipeline {
 
     val assembler = new VectorAssembler().setInputCols(
       Array(
-        //tokenHashingTF.getOutputCol,
+        tokenIDF.getOutputCol,
         posHashingTF.getOutputCol,
         emoHashingTF.getOutputCol,
         ngramCharHashingTF.getOutputCol,
-        //ngramWordHashingTF.getOutputCol,
+        ngramWordHashingTF.getOutputCol,
         ngramPosHashingTF.getOutputCol,
         puncsHashingTF.getOutputCol,
         wordForms.getOutputCol,
@@ -204,6 +212,7 @@ class PANPipeline {
         wordLengths,
         countFeatures,
         tokenHashingTF,
+        tokenIDF,
         emoHashingTF,
         posHashingTF,
         ngramCharHashingTF,

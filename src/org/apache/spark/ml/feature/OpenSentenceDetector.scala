@@ -1,9 +1,9 @@
 package org.apache.spark.ml.feature
 
 
+import opennlp.models.SentenceDetectorML
 
 import scala.collection.{mutable, JavaConversions}
-import models.opennlp.SentenceDetectorML
 import org.apache.spark.annotation.{DeveloperApi, Experimental}
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap

@@ -1,4 +1,4 @@
-package models.opennlp
+package opennlp.models
 
 import java.io.{FileOutputStream, BufferedOutputStream, FileInputStream}
 import java.nio.charset.Charset

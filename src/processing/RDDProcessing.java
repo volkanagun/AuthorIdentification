@@ -1,6 +1,6 @@
 package processing;
 
-import models.opennlp.SentenceDetectorML;
+import opennlp.models.SentenceDetectorML;
 import org.apache.spark.api.java.function.PairFunction;
 import structures.*;
 import structures.summary.PANDoc;

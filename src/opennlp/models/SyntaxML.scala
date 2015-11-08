@@ -1,4 +1,4 @@
-package models.opennlp
+package opennlp.models
 
 import java.io.FileInputStream
 
@@ -18,8 +18,15 @@ class SyntaxML {
   }
 
   def fit(sentence:String): Array[String] ={
+    //Number of Parses, Average Depth
+    //Top parse sub sentence count
+    //Top parse depth of each parse head
+    //Top parse top NP,VP,S lengths
     val topParses = ParserTool.parseLine(sentence,parser,10)
-    topParses(0).showCodeTree()
+    val parse = topParses(0)
+    val buffer = new StringBuffer()
+    parse.showCodeTree(buffer)
+    println(buffer.toString)
     Array()
   }
 }

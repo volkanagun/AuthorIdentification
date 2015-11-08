@@ -1,20 +1,11 @@
-package models.opennlp;
+package opennlp.models;
 
 import opennlp.tools.sentdetect.*;
-import opennlp.tools.util.ObjectStream;
-import opennlp.tools.util.PlainTextByLineStream;
-import opennlp.tools.util.TrainingParameters;
-import scala.collection.JavaConversions;
+import opennlp.tools.util.*;
 
-
-import scala.collection.immutable.Seq;
-import scala.collection.mutable.StringBuilder;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Created by wolf on 13.08.2015.
@@ -48,7 +39,7 @@ public class SentenceDetectorML implements Serializable{
 
     public void train(final String filename) throws IOException {
         Charset charset = Charset.forName("UTF-8");
-
+        //InputStreamFactory inputStream = new MarkableFileInputStreamFactory(new File(filename));
         ObjectStream<String> lineStream = new PlainTextByLineStream(new FileInputStream(filename), charset);
         ObjectStream<SentenceSample> sampleStream = new SentenceSampleStream(lineStream);
         SentenceDetectorFactory sentenceDetectorFactory = new SentenceDetectorFactory();
@@ -57,7 +48,8 @@ public class SentenceDetectorML implements Serializable{
         SentenceModel model;
 
         try {
-            model = SentenceDetectorME.train("tr", sampleStream, true, null, TrainingParameters.defaultParams());
+            SentenceDetectorFactory detectorFactory = new SentenceDetectorFactory();
+            model = SentenceDetectorME.train("tr", sampleStream, detectorFactory, TrainingParameters.defaultParams());
         } finally {
             sampleStream.close();
         }

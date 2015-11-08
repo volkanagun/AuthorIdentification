@@ -24,6 +24,7 @@ import org.apache.spark.ml.param.{IntParam, ParamMap, ParamValidators}
 import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
 import org.apache.spark.ml.util.{Identifiable, SchemaUtils}
 import org.apache.spark.mllib.feature
+
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, udf}
 import org.apache.spark.sql.types.{ArrayType, StructType}
@@ -33,7 +34,7 @@ import org.apache.spark.sql.types.{ArrayType, StructType}
  * Maps a sequence of terms to their term frequencies using the hashing trick.
  */
 @Experimental
-class ModifiedHashingTF(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
+class ModifiedTFIDF(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
   def this() = this(Identifiable.randomUID("labelCounter"))
 
@@ -50,8 +51,9 @@ class ModifiedHashingTF(override val uid: String) extends Transformer with HasIn
    */
   val numFeatures = new IntParam(this, "numFeatures", "number of features (> 0)",
     ParamValidators.gt(0))
-
   setDefault(numFeatures -> (1 << 18))
+
+
 
   /** @group getParam */
   def getNumFeatures: Int = $(numFeatures)
@@ -59,14 +61,18 @@ class ModifiedHashingTF(override val uid: String) extends Transformer with HasIn
   /** @group setParam */
   def setNumFeatures(value: Int): this.type = set(numFeatures, value)
 
+
   override def transform(dataset: DataFrame): DataFrame = {
     val outputSchema = transformSchema(dataset.schema)
     val hashingTF = new feature.HashingTF($(numFeatures))
+
+
     val t = udf {
       sentences:Seq[Seq[String]]=>{
         var terms = Array[String]()
         sentences.foreach(words=> terms = terms++words)
         hashingTF.transform(terms)
+
       }
 
     }
@@ -83,5 +89,5 @@ class ModifiedHashingTF(override val uid: String) extends Transformer with HasIn
     SchemaUtils.appendColumn(schema, attrGroup.toStructField())
   }
 
-  override def copy(extra: ParamMap): ModifiedHashingTF = defaultCopy(extra)
+  override def copy(extra: ParamMap): ModifiedTFIDF = defaultCopy(extra)
 }

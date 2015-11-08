@@ -126,7 +126,7 @@ public class Engine implements Serializable {
             }
         }
 
-        //chart.printChart();
+        chart.printChart();
         return chart.chartResult();
     }
 

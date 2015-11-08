@@ -1,6 +1,6 @@
 package org.apache.spark.ml.feature
 
-import models.opennlp.PosTaggerML
+import opennlp.models.PosTaggerML
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap

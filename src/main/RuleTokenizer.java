@@ -23,15 +23,18 @@ public class RuleTokenizer implements Serializable {
     public Regex numberRegex = new Regex("numberRegex", "(\\d+)", "$1");
     public Regex numberDot = new Regex("numberRegex", "(\\d+([\\.\\,]\\d?)+)", "$1");
 
-    public Regex lowercaseLetter = new Regex("lowercaseLetter", "\\p{Lo}", "$1");
-    public Regex uppercaseLetter = new Regex("uppercaseLetter", "\\p{Lu}", "$1");
-    public Regex someLetter = new Regex("someLetter", "\\p{L}+", "$1");
+    public Regex lowercaseLetter = new Regex("lowercaseLetter", "(\\p{Lo})", "$1");
+    public Regex uppercaseLetter = new Regex("uppercaseLetter", "(\\p{Lu})", "$1");
+    public Regex someLetter = new Regex("someLetter", "(\\p{L}+)", "$1");
 
     public Regex moneySymbol = new Regex("moneySymbol", "(\\$|ман|BZ$|$b|лв|¥|₡|Kč|£|€|¢|₩|ден|₮|₦|฿|₤)", "$1");
     public Regex abbreviation = new Regex("abbreviation", "(Ph[Dd]\\.|[Dd]r\\.|Mr\\.|Mrs\\.|Ms.)", "$1");
 
     public Rule letters = Rule.createRule(new Regex("LETTERS","(\\p{L}+)","$1"));
     public Rule repeatingPunc = Rule.createRule(repeatingPunctuation);
+    public List<Rule> abbreviationRule = Rule.createRule("abbreviationRule",new Regex[]{uppercaseLetter,dotPunctuation});
+    public List<Rule> abbreviationSemi = Rule.createRule("abbreviationRule",abbreviationRule,abbreviationRule);
+
 
     //Tokenize punctuations
     //Numbers, Abbreviations
@@ -42,6 +45,8 @@ public class RuleTokenizer implements Serializable {
         this.engine = new Engine();
         this.engine.addRule(letters);
         this.engine.addRule(repeatingPunc);
+        this.engine.addRule(abbreviationRule);
+        this.engine.addRule(abbreviationSemi);
 
 
         //Rules
@@ -53,7 +58,7 @@ public class RuleTokenizer implements Serializable {
 
     }
 
-    public String[] tokenize(String text) {
+    public String[] tokenizeDebug(String text) {
         List<Match> matches = this.engine.parse(text);
         List<String> matchList = new ArrayList<>();
         for (Match match : matches) {
@@ -67,7 +72,7 @@ public class RuleTokenizer implements Serializable {
         RuleTokenizer tokenizer = new RuleTokenizer();
 
         String text = "U.S. 1000.000.000,00$ PhD... Ali Korkar icin odeme yaptilar...";
-        String[] tokens = tokenizer.tokenize(text);
+        String[] tokens = tokenizer.tokenizeDebug(text);
 
         for (String token : tokens) {
             System.out.print(" " + token);

@@ -60,7 +60,7 @@ class WekaARFFSink {
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(text)
     bw.close()
-    return collectedLabels.map(row => row(0).asInstanceOf[Double].toInt.toString).toList
+    return collectedLabels.map(row =>"Author"+row(0).asInstanceOf[Double].toInt.toString).toList
   }
 
   def sinkTest(filename: String, trainLabels: List[String], dataFrame: DataFrame): Unit = {
@@ -93,7 +93,7 @@ class WekaARFFSink {
 
 
     val reducedRDD = lineRDD.filter(pair=>{
-      val label = "Author"+pair._1.toInt
+      val label = "Author"+pair._1.toInt.toString
       trainLabels.contains(label)
     }).map(pair=>pair._2)
 
