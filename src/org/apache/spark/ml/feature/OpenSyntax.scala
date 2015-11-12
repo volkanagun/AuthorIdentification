@@ -7,6 +7,7 @@ class OpenSyntax {
   //Count of sub sentences (S)
   //Sub sentence token length
   //Depth of tree
-  //Top depth->postag counts {1->S,2->NP}
+  //Top depth->chunk counts {1->S,2->NP}
+  //Length->text
 
 }

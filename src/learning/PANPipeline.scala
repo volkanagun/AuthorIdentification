@@ -161,11 +161,9 @@ class PANPipeline {
       .setOutputCol("ngram-words-features")
 
 
-
     val ngramPosHashingTF = new HashingTF()
       .setNumFeatures(1000).setInputCol(ngramPos.getOutputCol)
       .setOutputCol("ngram-pos-features")
-
 
 
     val puncsHashingTF = new ModifiedTFIDF()
