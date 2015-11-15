@@ -2,8 +2,9 @@ package processing;
 
 import opennlp.models.SentenceDetectorML;
 import org.apache.spark.api.java.function.PairFunction;
-import structures.*;
-import structures.summary.PANDoc;
+import processing.structures.docs.*;
+import processing.utils.XMLParser;
+import processing.structures.summary.PANDoc;
 import util.PrintBuffer;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.spark.SparkConf;
@@ -15,9 +16,9 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
 import processing.comparators.TupleSizeComparator;
 import scala.Tuple2;
-import structures.stats.AuthorStats;
-import structures.stats.DocStats;
-import structures.summary.ReutersDoc;
+import processing.structures.stats.AuthorStats;
+import processing.structures.stats.DocStats;
+import processing.structures.summary.ReutersDoc;
 
 import java.io.Serializable;
 import java.util.*;

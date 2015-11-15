@@ -1,7 +1,7 @@
 package crawler.web;
 
 
-import operations.TextPattern;
+import util.TextPattern;
 
 import java.io.Serializable;
 import java.util.ArrayList;

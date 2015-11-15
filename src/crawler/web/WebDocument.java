@@ -1,6 +1,6 @@
 package crawler.web;
 
-import operations.TextFile;
+import util.TextFile;
 
 import java.io.File;
 import java.io.Serializable;

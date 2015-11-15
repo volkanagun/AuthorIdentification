@@ -1,6 +1,6 @@
 package crawler.web;
 
-import structures.Document;
+import processing.structures.docs.Document;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;

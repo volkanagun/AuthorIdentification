@@ -2,15 +2,15 @@ package processing;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
+import processing.utils.RDDConfiguration;
+import processing.utils.XMLParser;
 import scala.Tuple2;
-import structures.Document;
-import structures.Reuters;
-import structures.stats.AuthorStats;
-import structures.stats.DocStats;
+import processing.structures.docs.Document;
+import processing.structures.stats.AuthorStats;
+import processing.structures.stats.DocStats;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**

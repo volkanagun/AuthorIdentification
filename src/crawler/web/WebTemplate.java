@@ -1,6 +1,6 @@
 package crawler.web;
 
-import operations.TextFile;
+import util.TextFile;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.fluent.Request;
