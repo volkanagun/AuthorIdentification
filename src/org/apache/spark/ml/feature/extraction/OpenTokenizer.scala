@@ -1,17 +1,14 @@
-package org.apache.spark.ml.feature
+package org.apache.spark.ml.feature.extraction
 
-import com.fasterxml.jackson.module.scala.modifiers.SeqTypeModifier
 import opennlp.models.TokenizerML
-import opennlp.tools.tokenize.TokenizerME
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
-import org.apache.spark.ml.param.shared.{HasOutputCol, HasInputCol}
+import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.{functions, DataFrame}
 import org.apache.spark.sql.functions.col
-
-import org.apache.spark.sql.types.{StructField, ArrayType, StringType, StructType}
+import org.apache.spark.sql.types.{ArrayType, StringType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, functions}
 
 /**
  * Created by wolf on 28.10.2015.

@@ -1,5 +1,6 @@
 package processing;
 
+import com.clearspring.analytics.util.DoublyLinkedList;
 import opennlp.models.SentenceDetectorML;
 import org.apache.spark.api.java.function.PairFunction;
 import processing.structures.docs.*;
@@ -36,9 +37,10 @@ public class RDDProcessing implements Serializable {
     private String REUTERSDIRECTORY = "resources/reuters/reuters-article*";
 
     private String TWEETDIRECTORY = "resources/twitter/twitter*";
-    private String PANBINARYDIRECTORY = "resources/pan/binary-large";
+    private String PANBINARYLARGEDIRECTORY = "resources/pan/binary-large";
     private String PANLARGEDIRECTORY = "resources/pan/sources-large/*";
-
+    private String PANBINARYSMALLDIRECTORY = "resources/pan/binary-small";
+    private String PANSMALLDIRECTORY = "resources/pan/sources-small/*";
 
     public RDDProcessing() {
 
@@ -188,7 +190,7 @@ public class RDDProcessing implements Serializable {
     //<editor-fold defaultstate="collapsed" desc="PAN Processing">
 
     public JavaRDD<PANDoc> panRDDLoad(JavaSparkContext sc){
-        return sc.objectFile(PANBINARYDIRECTORY);
+        return sc.objectFile(PANBINARYLARGEDIRECTORY);
     }
 
     /**
@@ -197,16 +199,91 @@ public class RDDProcessing implements Serializable {
 
      * @return
      */
-    public JavaRDD<PANDoc> panRDD(JavaSparkContext sparkContext) {
+    public JavaRDD<PANDoc> panLargeRDD(JavaSparkContext sparkContext) {
         JavaRDD<PANDoc> docJavaRDD = panRDD(loadXML(sparkContext, PANLARGEDIRECTORY));
         return docJavaRDD;
     }
 
-    public JavaRDD<PANDoc> panRDDSave(JavaSparkContext sparkContext) {
-        JavaRDD<PANDoc> docJavaRDD = panRDD(loadXML(sparkContext, PANLARGEDIRECTORY));
-        docJavaRDD.saveAsObjectFile(PANBINARYDIRECTORY);
+    public JavaRDD<PANDoc> panSmallRDD(JavaSparkContext sparkContext) {
+        JavaRDD<PANDoc> docJavaRDD = panRDD(loadXML(sparkContext, PANSMALLDIRECTORY));
         return docJavaRDD;
     }
+
+    public JavaRDD<PANDoc> panRDDLargeSave(JavaSparkContext sparkContext) {
+        JavaRDD<PANDoc> docJavaRDD = panRDD(loadXML(sparkContext, PANLARGEDIRECTORY));
+        docJavaRDD.saveAsObjectFile(PANBINARYLARGEDIRECTORY);
+        return docJavaRDD;
+    }
+    public JavaRDD<PANDoc> panRDDSmallSave(JavaSparkContext sparkContext) {
+        JavaRDD<PANDoc> docJavaRDD = panRDD(loadXML(sparkContext, PANSMALLDIRECTORY));
+        docJavaRDD.saveAsObjectFile(PANBINARYSMALLDIRECTORY);
+        return docJavaRDD;
+    }
+
+    public JavaRDD<PANDoc> panRDDSortByDocFreq(JavaRDD<PANDoc> panDocRDD, final String filterTye, final int minimumDocs){
+        //Group by each label
+        //Sort by their doc frequency
+        //Filter by minimum doc frequency
+
+        JavaRDD<PANDoc> docs = panDocRDD.filter(new Function<PANDoc, Boolean>() {
+            @Override
+            public Boolean call(PANDoc panDoc) throws Exception {
+                return panDoc.getDocid().startsWith(filterTye);
+            }
+        });
+
+        JavaPairRDD<Double, Iterable<PANDoc>> pairRDD = docs.groupBy(new Function<PANDoc, Double>() {
+            @Override
+            public Double call(PANDoc v1) throws Exception {
+                return v1.getLabel();
+            }
+        });
+
+        JavaPairRDD<Double, Iterable<PANDoc>> filtered = pairRDD.filter(new Function<Tuple2<Double, Iterable<PANDoc>>, Boolean>() {
+            @Override
+            public Boolean call(Tuple2<Double, Iterable<PANDoc>> v1) throws Exception {
+                List<PANDoc> docList = IteratorUtils.toList(v1._2().iterator());
+                return docList.size()>=minimumDocs;
+            }
+        });
+
+        //sort by iterable size
+        //first map and then sort
+        /*JavaPairRDD<Integer, Iterable<PANDoc>> mapped = filtered.mapToPair(new PairFunction<Tuple2<Double, Iterable<PANDoc>>, Integer, Iterable<PANDoc>>() {
+            @Override
+            public Tuple2<Integer, Iterable<PANDoc>> call(Tuple2<Double, Iterable<PANDoc>> doubleIterableTuple2) throws Exception {
+                Iterable<PANDoc> iterable = doubleIterableTuple2._2();
+                Iterator<PANDoc> iter = iterable.iterator();
+                return new Tuple2<Integer,Iterable<PANDoc>>(IteratorUtils.toList(iter).size(),iterable);
+            }
+        });*/
+
+        //JavaPairRDD<Integer, Iterable<PANDoc>> sorted = mapped.sortByKey(false);
+        return filtered.flatMap(new FlatMapFunction<Tuple2<Double,Iterable<PANDoc>>, PANDoc>() {
+            @Override
+            public Iterable<PANDoc> call(Tuple2<Double, Iterable<PANDoc>> integerIterableTuple2) throws Exception {
+                return integerIterableTuple2._2();
+            }
+        });
+
+
+
+    }
+
+    private void printSorted(JavaPairRDD<Integer, Iterable<PANDoc>> sorted){
+        Map<Integer, Iterable<PANDoc>> map = sorted.collectAsMap();
+        NavigableMap<Integer, Iterable<PANDoc>> sortedMap = (new TreeMap<>(map)).descendingMap();
+
+        Iterator<Integer> sizeIter = sortedMap.keySet().iterator();
+        while(sizeIter.hasNext()){
+            Integer key = sizeIter.next();
+            Iterator<PANDoc> iter = sortedMap.get(key).iterator();
+            PANDoc doc = iter.next();
+            System.out.println("Label: "+doc.getAuthorid().replaceAll("\\n","")+" Size:"+key);
+        }
+    }
+
+
 
     private JavaRDD<PANDoc> panRDD(JavaPairRDD<String, String> docRDD){
         JavaRDD<PAN> panRDD = docRDD.flatMap(new FlatMapFunction<Tuple2<String, String>, PAN>() {
@@ -283,7 +360,7 @@ public class RDDProcessing implements Serializable {
                 String text = pan.getText();
                 String docid = pan.getDocid();
                 double label = authors.indexOf(author);
-                return new PANDoc(docid,label,text);
+                return new PANDoc(docid,author,label,text);
             }
         });
     }
@@ -452,7 +529,7 @@ public class RDDProcessing implements Serializable {
         JavaSparkContext sc = new JavaSparkContext(conf);
         RDDProcessing processing = new RDDProcessing();
         PrintBuffer buffer = new PrintBuffer();
-        processing.panRDDSave(sc);
+        processing.panRDDLargeSave(sc);
 
 
         int debug = 0;

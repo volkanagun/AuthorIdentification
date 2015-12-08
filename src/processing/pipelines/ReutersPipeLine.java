@@ -1,5 +1,8 @@
 package processing.pipelines;
 
+import org.apache.spark.ml.feature.extraction.ModifiedTFIDF;
+import org.apache.spark.ml.feature.extraction.OpenSentenceDetector;
+import org.apache.spark.ml.feature.extraction.OpenTokenizer;
 import processing.utils.DataFrameSplit;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -7,11 +10,9 @@ import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.classification.DecisionTreeClassifier;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
-import org.apache.spark.ml.feature.ModifiedTFIDF;
-import org.apache.spark.ml.feature.OpenSentenceDetector;
-import org.apache.spark.ml.feature.OpenTokenizer;
+
 import org.apache.spark.ml.param.ParamMap;
-import org.apache.spark.ml.tuning.CrossValidator;
+import org.apache.spark.ml.tuning.CrossValidatorEqually;
 import org.apache.spark.ml.tuning.CrossValidatorModel;
 import org.apache.spark.ml.tuning.ParamGridBuilder;
 import org.apache.spark.mllib.evaluation.MulticlassMetrics;
@@ -28,7 +29,6 @@ import java.io.Serializable;
  * Created by wolf on 01.08.2015.
  */
 public class ReutersPipeLine implements Serializable {
-
 
 
     public void pipeline(JavaSparkContext sc, RDDProcessing processing) {
@@ -65,7 +65,7 @@ public class ReutersPipeLine implements Serializable {
                 .setStages(new PipelineStage[]{tokenizer, hashingTF, dc});
 
 
-        CrossValidator crossval = new CrossValidator()
+        CrossValidatorEqually crossval = new CrossValidatorEqually()
                 .setEstimator(pipeline)
                 .setEvaluator(new MulticlassClassificationEvaluator());
 

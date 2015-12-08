@@ -1,7 +1,11 @@
 package processing.pipelines
 
+import org.apache.spark.api.java.JavaPairRDD
 import org.apache.spark.ml.classification.{DecisionTreeClassifier, NaiveBayes, RandomForestClassifier}
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.feature._
+import org.apache.spark.ml.feature.extraction._
+import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidatorEqually}
 import org.apache.spark.ml.{Pipeline, PipelineStage}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.linalg.Matrix
@@ -49,18 +53,20 @@ class PANPipeline {
     return sc;
   }
 
-  def pipeline(sc: SparkContext, printBuffer: PrintBuffer): Unit = {
+  def pipeline(sc: SparkContext, datasetFilter:String, printBuffer: PrintBuffer): Unit = {
 
     val sqlContext: SQLContext = new SQLContext(sc)
     val processing: RDDProcessing = new RDDProcessing()
     val rndSplit: DataFrameSplit = new DataFrameSplit("label", Array[Double](0.9, 0.1))
-    val panRDD: RDD[PANDoc] = processing.panRDD(sc)
-    val df = sqlContext.createDataFrame(panRDD, classOf[PANDoc])
+    val panRDD: RDD[PANDoc] = processing.panSmallRDD(sc)
+    val panGroupRDD:RDD[PANDoc] = processing.panRDDSortByDocFreq(panRDD,datasetFilter,50);
 
-    val trainFrame = df.filter(df("docid").startsWith("LargeTrain"))
+    val df = sqlContext.createDataFrame(panGroupRDD, classOf[PANDoc])//.toDF("label","docid","authorid","text")
+
+    //val trainFrame = df.filter(df("docid").startsWith(datasetFilter))
     //trainFrame.write.save("binary/pan-large-train")
     //val trainFrame = sqlContext.read.load("binary/large-train")
-    val testFrame = df.filter(df("docid").startsWith("LargeTest"))
+    //val testFrame = df.filter(df("docid").startsWith(datasetFilter))
     //testFrame.write.save("binary/pan-large-test")
     //val testFrame = sqlContext.read.load("binary/large-test")
 
@@ -169,16 +175,17 @@ class PANPipeline {
 
     val assembler = new VectorAssembler().setInputCols(
       Array(
-        tokenIDF.getOutputCol,
-        posHashingTF.getOutputCol,
-        emoHashingTF.getOutputCol,
-        ngramCharHashingTF.getOutputCol,
-        ngramWordHashingTF.getOutputCol,
-        ngramPosHashingTF.getOutputCol,
-        puncsHashingTF.getOutputCol,
-        wordForms.getOutputCol,
-        wordLengths.getOutputCol,
-        countFeatures.getOutputCol))
+        tokenIDF.getOutputCol
+        //posHashingTF.getOutputCol,
+        //emoHashingTF.getOutputCol,
+        //ngramCharHashingTF.getOutputCol,
+        //ngramWordHashingTF.getOutputCol,
+        //ngramPosHashingTF.getOutputCol,
+        //puncsHashingTF.getOutputCol,
+        //wordForms.getOutputCol,
+        //wordLengths.getOutputCol,
+        //countFeatures.getOutputCol
+        ))
       .setOutputCol("features")
 
     val nvb: NaiveBayes = new NaiveBayes()
@@ -194,49 +201,43 @@ class PANPipeline {
 
     val pipeline = new Pipeline()
       .setStages(Array[PipelineStage](
-        sentenceDetector, tokenizer,posser,
-        emoticondetector,ngramChars,
+        sentenceDetector,
+        tokenizer,
+        /*posser,
+        emoticondetector,
+        ngramChars,
         ngramWords,
         ngramPos,
         repeatedPuncs,
         wordForms,
         wordLengths,
-        countFeatures,
+        countFeatures,*/
         tokenHashingTF,
         tokenIDF,
-        emoHashingTF,
+        /*emoHashingTF,
         posHashingTF,
         ngramCharHashingTF,
         ngramWordHashingTF,
         ngramPosHashingTF,
-        puncsHashingTF,
+        puncsHashingTF,*/
         assembler
+        //,
+        //nvb
         //,stringIndexer,randomForest
       ))
 
 
     val wekaSink = new WekaARFFSink
-    val pipelineModel = pipeline.fit(trainFrame)
-    val transformedTrain = pipelineModel.transform(trainFrame)
-    val transformedTest = pipelineModel.transform(testFrame)
+    val pipelineModel = pipeline.fit(df)
+    val transformedTrain = pipelineModel.transform(df)
     val labels = wekaSink.sinkTrain("train.arff", transformedTrain)
-    wekaSink.sinkTest("test.arff", labels, transformedTest)
 
 
-
-
-    /*val paramGrid = new ParamGridBuilder()
-      .addGrid(wordHashingTF.numFeatures, Array[Int](100, 1000, 10000))
-      .addGrid(emoHashingTF.numFeatures, Array[Int](100, 1000, 10000))
-      .addGrid(ngramCharHashingTF.numFeatures, Array[Int](100, 1000, 10000))
-      .addGrid(ngramWordHashingTF.numFeatures, Array[Int](100, 1000, 10000))
-      .addGrid(puncsHashingTF.numFeatures, Array[Int](100, 1000, 10000))
-      .build()*/
 
     //transform vectors via pipeline
     /*var i = 0
     while (i < 10) {
-      val trainTestDf: Array[DataFrame] = dtframe.randomSplit(Array[Double](0.9,0.1))
+      val trainTestDf: Array[DataFrame] = df.randomSplit(Array[Double](0.9,0.1))
       val trainFrame: DataFrame = trainTestDf(0).cache
       val testFrame: DataFrame = trainTestDf(1).cache
 
@@ -248,22 +249,28 @@ class PANPipeline {
       i += 1
     }*/
 
-    /* val crossval = new CrossValidator()
+    /*val paramGrid = new ParamGridBuilder()
+      .addGrid(tokenHashingTF.numFeatures, Array[Int](100, 1000, 10000))
+      .addGrid(emoHashingTF.numFeatures, Array[Int](100, 1000, 10000))
+      .addGrid(ngramCharHashingTF.numFeatures, Array[Int](100, 1000, 10000))
+      .addGrid(ngramWordHashingTF.numFeatures, Array[Int](100, 1000, 10000))
+      .addGrid(puncsHashingTF.numFeatures, Array[Int](100, 1000, 10000))
+      .build()
+
+     val crossval = new CrossValidatorEqually()
        .setEstimator(pipeline)
        .setEvaluator(new MulticlassClassificationEvaluator())
 
-
-
      crossval.setEstimatorParamMaps(paramGrid)
-     crossval.setNumFolds(10)
+     crossval.setNumFolds(5)
 
      val model = crossval.fit(trainFrame)
      val predictions = model.transform(testFrame)
-     */
+
     //predictions.write.save("predictions-1.table")
     //val predictions = sqlContext.read.load("prediction.table")
     //predictions.write.save("prediction.table")
-    /*printResults(printBuffer, trainFrame, testFrame, predictions)
+    printResults(printBuffer, trainFrame, testFrame, predictions)
     printBuffer.print()*/
 
 
@@ -274,7 +281,7 @@ class PANPipeline {
                    testFrame: DataFrame,
                    predictionFrame: DataFrame): Unit = {
 
-    val predLabels = predictionFrame.select("prediction", "indexed-label").map(row => (row.getDouble(0), row.getDouble(1)))
+    val predLabels = predictionFrame.select("prediction", "label").map(row => (row.getDouble(0), row.getDouble(1)))
 
     val metrics = new MulticlassMetrics(predLabels)
     val trainCount: Long = trainFrame.count
@@ -290,7 +297,7 @@ class PANPipeline {
     buffer.addLine("Precision:" + precision)
     buffer.addLine("Recall:" + recall)
     buffer.addLine("F1-Measure:" + fmeasure)
-    buffer.addLine("Confusion:" + matrix.toString())
+    buffer.addLine("Confusion:\n" + matrix.toString())
     buffer.print()
   }
 
@@ -300,7 +307,7 @@ object Test {
   def main(args: Array[String]) {
     val pipeline = new PANPipeline()
     val buffer = new PrintBuffer
-    pipeline.pipeline(pipeline.cluster(), buffer)
+    pipeline.pipeline(pipeline.local(),"SmallTrain", buffer)
 
   }
 }

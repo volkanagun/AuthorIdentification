@@ -1,16 +1,15 @@
-package org.apache.spark.ml.feature
-
+package org.apache.spark.ml.feature.extraction
 
 import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.attribute.AttributeGroup
-import org.apache.spark.ml.param.shared.{HasOutputCol, HasInputCol}
-import org.apache.spark.ml.{Transformer, UnaryTransformer}
-import org.apache.spark.ml.param.{ParamMap, ParamValidators, IntParam}
-import org.apache.spark.ml.util.{SchemaUtils, Identifiable}
+import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
+import org.apache.spark.ml.param.{IntParam, ParamMap, ParamValidators}
+import org.apache.spark.ml.util.{Identifiable, SchemaUtils}
 import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.sql.{functions, DataFrame}
-import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, functions}
 
 /**
  * Created by wolf on 30.10.2015.

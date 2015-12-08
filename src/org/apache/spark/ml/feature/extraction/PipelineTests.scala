@@ -1,5 +1,6 @@
-package org.apache.spark.ml.feature
+package org.apache.spark.ml.feature.extraction
 
+import org.apache.spark.ml.feature._
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 

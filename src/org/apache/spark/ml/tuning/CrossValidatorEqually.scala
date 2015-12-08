@@ -25,12 +25,12 @@ import org.apache.spark.ml._
 import org.apache.spark.ml.evaluation.Evaluator
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.mllib.util.{MLUtilsModified, MLUtilsModified$}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
 
 /**
- * Params for [[CrossValidator]] and [[CrossValidatorModel]].
+ * Params for [[CrossValidatorEqually]] and [[CrossValidatorModel]].
  */
 private[ml] trait CrossValidatorParams extends ValidatorParams {
   /**
@@ -52,7 +52,7 @@ private[ml] trait CrossValidatorParams extends ValidatorParams {
  * K-fold cross validation.
  */
 @Experimental
-class CrossValidator(override val uid: String) extends Estimator[CrossValidatorModel]
+class CrossValidatorEqually(override val uid: String) extends Estimator[CrossValidatorModel]
 with CrossValidatorParams with Logging {
 
   def this() = this(Identifiable.randomUID("cv"))
@@ -80,7 +80,9 @@ with CrossValidatorParams with Logging {
     val epm = $(estimatorParamMaps)
     val numModels = epm.length
     val metrics = new Array[Double](epm.length)
-    val splits = MLUtils.kFold(dataset.rdd, $(numFolds), 0)
+
+    val splits = MLUtilsModified.kFoldEqually(dataset.rdd, $(numFolds), 0)
+
     splits.zipWithIndex.foreach { case ((training, validation), splitIndex) =>
       val trainingDataset = sqlCtx.createDataFrame(training, schema).cache()
       val validationDataset = sqlCtx.createDataFrame(validation, schema).cache()
@@ -112,6 +114,10 @@ with CrossValidatorParams with Logging {
     copyValues(new CrossValidatorModel(uid, bestModel, metrics).setParent(this))
   }
 
+
+
+
+
   override def transformSchema(schema: StructType): StructType = {
     $(estimator).transformSchema(schema)
   }
@@ -124,8 +130,8 @@ with CrossValidatorParams with Logging {
     }
   }
 
-  override def copy(extra: ParamMap): CrossValidator = {
-    val copied = defaultCopy(extra).asInstanceOf[CrossValidator]
+  override def copy(extra: ParamMap): CrossValidatorEqually = {
+    val copied = defaultCopy(extra).asInstanceOf[CrossValidatorEqually]
     if (copied.isDefined(estimator)) {
       copied.setEstimator(copied.getEstimator.copy(extra))
     }

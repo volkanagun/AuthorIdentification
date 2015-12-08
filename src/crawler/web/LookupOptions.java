@@ -55,6 +55,9 @@ public class LookupOptions implements Serializable {
     public static String PANLARGEDIRECTORY = "resources/pan/raw-large/";
     public static String PANLARGESOURCEDIRECTORY = "resources/pan/sources-large/";
 
+    public static String PANSMALLDIRECTORY = "resources/pan/raw-small/";
+    public static String PANSMALLSOURCEDIRECTORY = "resources/pan/sources-small/";
+
 
 
 

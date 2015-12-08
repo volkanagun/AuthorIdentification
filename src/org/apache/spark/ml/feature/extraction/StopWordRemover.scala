@@ -1,25 +1,14 @@
-package org.apache.spark.ml.feature
+package org.apache.spark.ml.feature.extraction
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
-import org.apache.spark.ml.param.ParamMap
-import org.apache.spark.ml.param.shared.HasInputCol
-import org.apache.spark.ml.param.shared.HasOutputCol
-import org.apache.spark.ml.param.shared.{HasOutputCol, HasInputCol}
+import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.ArrayType
-import org.apache.spark.sql.types.StringType
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{functions, DataFrame}
-import org.apache.spark.sql.types.{StructField, StringType, ArrayType, StructType}
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.{ArrayType, StringType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, functions}
+
 import scala.io.Source
 
 /**

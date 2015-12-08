@@ -1,8 +1,8 @@
-package org.apache.spark.ml.feature
+package org.apache.spark.ml.feature.extraction
 
 import org.apache.spark.ml.UnaryTransformer
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.types.{StringType, ArrayType, DataType}
+import org.apache.spark.sql.types.{ArrayType, DataType, StringType}
 
 import scala.io.Source
 

@@ -1,12 +1,12 @@
-package org.apache.spark.ml.feature
+package org.apache.spark.ml.feature.extraction
 
-import org.apache.spark.ml.{Transformer, UnaryTransformer}
-import org.apache.spark.ml.param.shared.{HasOutputCol, HasInputCol}
-import org.apache.spark.ml.param.{ParamMap, ParamValidators, IntParam}
+import org.apache.spark.ml.Transformer
+import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
+import org.apache.spark.ml.param.{IntParam, ParamMap, ParamValidators}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.{functions, DataFrame}
 import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.types.{StructField, StringType, ArrayType, StructType}
+import org.apache.spark.sql.types.{ArrayType, StringType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, functions}
 
 /**
  * Created by wolf on 29.10.2015.

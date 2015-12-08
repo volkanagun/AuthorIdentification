@@ -7,14 +7,25 @@ import java.io.Serializable;
  */
 public class PANDoc implements Serializable{
     private String docid;
-    private double label;
+    private String authorid;
+    private Double label;
+
     private String text;
 
 
-    public PANDoc(String docid,double label, String text) {
+    public PANDoc(String docid, String authorid, Double label, String text) {
         this.docid = docid;
+        this.authorid = authorid;
         this.label = label;
         this.text = text;
+    }
+
+    public String getAuthorid() {
+        return authorid;
+    }
+
+    public void setAuthorid(String authorid) {
+        this.authorid = authorid;
     }
 
     public String getDocid() {
@@ -25,11 +36,11 @@ public class PANDoc implements Serializable{
         this.docid = docid;
     }
 
-    public double getLabel() {
+    public Double getLabel() {
         return label;
     }
 
-    public void setLabel(double label) {
+    public void setLabel(Double label) {
         this.label = label;
     }
 

@@ -422,7 +422,7 @@ public class XMLParser implements Serializable {
                 case "AUTHORNAME":{
                     String author = item.getTextContent();
                     if (author != null)
-                        panDocument.setAuthor(author);
+                        panDocument.setAuthor(author.trim());
                     break;
                 }
             }

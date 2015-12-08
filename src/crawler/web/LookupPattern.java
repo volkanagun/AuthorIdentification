@@ -241,7 +241,10 @@ public class LookupPattern implements Serializable {
             TextPattern.obtainPatterns(startRegex, endRegex, startMarker, endMarker, partial, resultList);
         } else if (!type.equals(LookupOptions.TEXT)) {
             TextPattern.obtainPatterns(startRegex, endRegex, false, partial, resultList);
-        } else {
+        } else if(type.equals(LookupOptions.TEXT) && regex!=null){
+            TextPattern.obtainPatterns(startRegex, endRegex, false, partial, resultList);
+        }
+        else if(type.equals(LookupOptions.TEXT)){
             TextPattern.obtainPatterns(startRegex, endRegex, removeTags, partial, resultList);
         }
 

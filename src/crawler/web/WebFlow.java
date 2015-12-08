@@ -427,9 +427,26 @@ public class WebFlow implements Serializable, Callable<Boolean> {
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLEID,"file=\"","\">").setNth(0))
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<author id=\"", "\"/>"))
                 .addPattern(new LookupPattern(LookupOptions.TEXT,LookupOptions.ARTICLETEXT,"<body>","</body>")
-                        .setRegex(new String[]{"&","<NAME/>",">","<"}).setReplaces(new String[]{"&amp;","NamedEntity","&gt;","&lt;"}));
+                        .setRegex(new String[]{"&","<NAME/>","<.*?>", ">","<"}).setReplaces(new String[]{"&amp;","NamedEntity","","&gt;","&lt;"}));
 
         mainTemplate.addFolder(LookupOptions.PANLARGEDIRECTORY);
+        mainTemplate.setMainPattern(articlePattern);
+        mainTemplate.setType(Document.PAN);
+        WebFlow webFlow = new WebFlow(mainTemplate);
+        return webFlow;
+    }
+
+    public static WebFlow buildForPAN2011Small(){
+        WebTemplate mainTemplate = new WebTemplate(LookupOptions.PANSMALLSOURCEDIRECTORY,"SmallTrain",LookupOptions.EMPTYDOMAIN);
+
+        LookupPattern articlePattern = new LookupPattern(LookupOptions.CONTAINER,LookupOptions.ARTICLE,"<text.*?","</text>")
+                .setStartEndMarker("<text","</text>")
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLEID,"file=\"","\">").setNth(0))
+                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<author id=\"", "\"/>"))
+                .addPattern(new LookupPattern(LookupOptions.TEXT,LookupOptions.ARTICLETEXT,"<body>","</body>")
+                        .setRegex(new String[]{"&","<NAME/>","<.*?>", ">","<"}).setReplaces(new String[]{"&amp;","NamedEntity","","&gt;","&lt;"}));
+
+        mainTemplate.addFolder(LookupOptions.PANSMALLDIRECTORY);
         mainTemplate.setMainPattern(articlePattern);
         mainTemplate.setType(Document.PAN);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -468,7 +485,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 //
 //        service.shutdown();
 
-        WebFlow flowTrain = buildForPAN2011Large();
+        WebFlow flowTrain = buildForPAN2011Small();
         flowTrain.execute();
 
 
