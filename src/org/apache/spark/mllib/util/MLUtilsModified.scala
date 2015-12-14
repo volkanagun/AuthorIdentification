@@ -430,10 +430,10 @@ object MLUtilsModified {
       .set("spark.driver.memory", "4g")
       .set("spark.executor.memory", "1g")
       .set("spark.rdd.compress", "true")
-      .set("log4j.rootCategory", "INFO");
+      .set("log4j.rootCategory", "INFO")
 
     val sc = new SparkContext(conf);
-    return sc;
+    return sc
   }
 
   def main(args: Array[String]) {

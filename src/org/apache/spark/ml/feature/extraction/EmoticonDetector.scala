@@ -49,7 +49,6 @@ class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[St
       val filter = iter.filter(pair=>sentence.contains(pair._1))
       emoset = emoset :+ filter.map(pair=>pair._2)
     })
-
     emoset
   }
 

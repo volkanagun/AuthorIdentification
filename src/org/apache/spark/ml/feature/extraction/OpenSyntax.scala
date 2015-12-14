@@ -10,5 +10,8 @@ class OpenSyntax {
   //Top depth->chunk counts {1->S,2->NP}
   //Length->text
 
+  // => Question start
+  // => Question sentence without question mark
+  // => Question sentence without stop punctuation
 
 }

@@ -36,7 +36,6 @@ class RepeatedPuncs(override val uid: String) extends Transformer with HasInputC
             val matches = puncpattern.findAllIn(sentence).toSeq
             puncs = puncs:+matches
           })
-
           puncs
 
         }

@@ -1,7 +1,8 @@
 package processing.pipelines
 
 import org.apache.spark.api.java.JavaPairRDD
-import org.apache.spark.ml.classification.{DecisionTreeClassifier, NaiveBayes, RandomForestClassifier}
+import org.apache.spark.ml.classification.modified.DecisionTreeClassifier
+import org.apache.spark.ml.classification.{NaiveBayes, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml.feature.extraction._

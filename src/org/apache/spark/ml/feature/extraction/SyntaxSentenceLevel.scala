@@ -5,8 +5,6 @@ package org.apache.spark.ml.feature.extraction
  */
 class SyntaxSentenceLevel {
 
-  // => Question start
-  // => Question sentence without question mark
-  // => Question sentence without stop punctuation
+
 
 }

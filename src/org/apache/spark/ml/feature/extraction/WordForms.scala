@@ -2,7 +2,7 @@ package org.apache.spark.ml.feature.extraction
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.attribute.AttributeGroup
+import org.apache.spark.ml.attribute.{Attribute, NumericAttribute, AttributeGroup}
 import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
 import org.apache.spark.ml.param.{IntParam, ParamMap, ParamValidators}
 import org.apache.spark.ml.util.{Identifiable, SchemaUtils}
@@ -12,8 +12,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, functions}
 
 /**
- * Created by wolf on 31.10.2015.
- */
+  * Created by wolf on 31.10.2015.
+  */
 class WordForms(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
   def this() = this(Identifiable.randomUID("english-spell"))
@@ -28,7 +28,7 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
   val numFeatures = new IntParam(this, "numFeatures", "number of features (> 0)",
     ParamValidators.gt(0))
 
-  setDefault(numFeatures -> (1<<18))
+  setDefault(numFeatures -> (1 << 18))
 
   override def transform(dataset: DataFrame): DataFrame = {
     val outputSchema = transformSchema(dataset.schema)
@@ -93,7 +93,7 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
           })
 
           //Punctuation start
-          if(sentence.head.toLowerCase.matches("\\p{Punct}+")){
+          if (sentence.head.toLowerCase.matches("\\p{Punct}+")) {
             vector = vector.updated(9, vector(9) + 1);
           }
 
@@ -119,10 +119,24 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
     val inputType = schema($(inputCol)).dataType
     require(inputType.sameType(ArrayType(ArrayType(StringType, true))),
       s"Input type must be Array[Array[String]] but got $inputType.")
-    /*val outputFields = schema.fields :+ StructField($(outputCol), ArrayType(DoubleType, false), schema($(inputCol)).nullable)
-    StructType(outputFields)*/
 
-    val attrGroup = new AttributeGroup($(outputCol), $(numFeatures))
+    val defaultAttr = NumericAttribute.defaultAttr
+    val attrs = Array(
+      "lowercase-start",
+      "word-start",
+      "digit-start",
+      "namedentity-start",
+      "greetings-informal-start",
+      "greetings-formal-start",
+      "all-capitalized",
+      "upper-lower",
+      "lower-upper",
+      "punctuation-start",
+      "question-mark-end"
+
+    ).map(defaultAttr.withName)
+
+    val attrGroup = new AttributeGroup($(outputCol), attrs.asInstanceOf[Array[Attribute]])
     SchemaUtils.appendColumn(schema, attrGroup.toStructField())
   }
 

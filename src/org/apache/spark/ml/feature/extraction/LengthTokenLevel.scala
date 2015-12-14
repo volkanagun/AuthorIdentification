@@ -2,7 +2,7 @@ package org.apache.spark.ml.feature.extraction
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.attribute.AttributeGroup
+import org.apache.spark.ml.attribute.{Attribute, NumericAttribute, AttributeGroup}
 import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
 import org.apache.spark.ml.param.{IntParam, ParamMap, ParamValidators}
 import org.apache.spark.ml.util.{Identifiable, SchemaUtils}
@@ -12,8 +12,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, functions}
 
 /**
- * Created by wolf on 31.10.2015.
- */
+  * Created by wolf on 31.10.2015.
+  */
 class LengthTokenLevel(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
 
@@ -28,7 +28,7 @@ class LengthTokenLevel(override val uid: String) extends Transformer with HasInp
   /** @group setParam */
   def setOutputCol(value: String): this.type = set(outputCol, value)
 
-  def nonzero(value:Double):Double=if(value==0) 1 else value
+  def nonzero(value: Double): Double = if (value == 0) 1 else value
 
   def this() = this(Identifiable.randomUID("stopwords"))
 
@@ -51,7 +51,6 @@ class LengthTokenLevel(override val uid: String) extends Transformer with HasInp
         var tokenCount = 0
 
         sentences.foreach(sentence => {
-
           sentence.foreach(token => {
             if (token.matches("\\p{L}+")) {
               wordCount += 1
@@ -68,7 +67,6 @@ class LengthTokenLevel(override val uid: String) extends Transformer with HasInp
 
             tokenCount += 1
             sentenceTotalLength += token.length
-
           })
 
           sentenceCount += 1
@@ -78,11 +76,12 @@ class LengthTokenLevel(override val uid: String) extends Transformer with HasInp
         //Consider each regex as a dictionary below some combinations represented
         //ToDo make them all automatic when dictionaries are given
         Vectors.dense(
-          sentenceTotalLength, wordTotalLength,
+          sentenceTotalLength,
+          wordTotalLength,
           puncTotalLength,
           digitTotalLength,
           sentenceTotalLength / nonzero(tokenCount),
-          sentenceTotalLength / nonzero(wordTotalLength) ,
+          sentenceTotalLength / nonzero(wordTotalLength),
           sentenceTotalLength / nonzero(puncTotalLength),
           sentenceTotalLength / nonzero(digitTotalLength),
           sentenceTotalLength / nonzero(sentenceCount),
@@ -93,6 +92,8 @@ class LengthTokenLevel(override val uid: String) extends Transformer with HasInp
           wordTotalLength / nonzero(wordCount),
           digitTotalLength / nonzero(digitCount)
         )
+
+
       }
     }
 
@@ -107,7 +108,26 @@ class LengthTokenLevel(override val uid: String) extends Transformer with HasInp
     val inputType = schema($(inputCol)).dataType
     require(inputType.sameType(ArrayType(ArrayType(StringType, false))), s"Input type must be Array[Array[String]] but got $inputType.")
 
-    val attrGroup = new AttributeGroup($(outputCol), $(numFeatures))
+    val defaultAttr = NumericAttribute.defaultAttr
+    val attrs = Array(
+      "TLSentence", "TLword", "TLPunc", "TLDigit",
+      "f1", "f2", "f3", "f4", "f5",
+      "AvgWord", "AvgPunc", "AvgDigit",
+      "MPuncLength", "MWordLength", "MDigitLength"
+    ).map(defaultAttr.withName)
+
+    val attrGroup = new AttributeGroup($(outputCol), attrs.asInstanceOf[Array[Attribute]])
     SchemaUtils.appendColumn(schema, attrGroup.toStructField())
   }
+
+  def show(dataset: DataFrame): Unit = {
+    val column = dataset.schema($(outputCol))
+    val attributes = AttributeGroup.fromStructField(column)
+    val size = attributes.size
+    for (i <- 0 until size) {
+      println(attributes.getAttr(i).name.get)
+    }
+  }
 }
+
+

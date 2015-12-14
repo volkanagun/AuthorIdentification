@@ -71,9 +71,7 @@ class ModifiedTFIDF(override val uid: String) extends Transformer with HasInputC
         var terms = Array[String]()
         sentences.foreach(words=> terms = terms++words)
         hashingTF.transform(terms)
-
       }
-
     }
     val metadata = outputSchema($(outputCol)).metadata
     val dframe = dataset.select(col("*"), t(col($(inputCol))).as($(outputCol), metadata))
