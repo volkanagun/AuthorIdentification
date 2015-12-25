@@ -4,7 +4,7 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
-class SVMMultiClassOVAModel(classModels: Array[SVMModel]) extends ClassificationModel with Serializable {
+class SVMMultiClassOVAModel(classModels: Array[SVMKernelizedModel]) extends ClassificationModel with Serializable {
 
   val classModelsWithIndex = classModels.zipWithIndex
 
@@ -31,7 +31,7 @@ class SVMMultiClassOVAModel(classModels: Array[SVMModel]) extends Classification
    */
   override def predict(testData: Vector): Double = predictPoint(testData, classModelsWithIndex)
 
-  def predictPoint(testData: Vector, models: Array[(SVMModel, Int)]): Double =
+  def predictPoint(testData: Vector, models: Array[(SVMKernelizedModel, Int)]): Double =
     models
       .map { case (classModel, classNumber) => (classModel.predict(testData), classNumber)}
       .maxBy { case (score, classNumber) => score}
@@ -52,7 +52,7 @@ object SVMMultiClassOVAWithSGD {
    * @param regParam Regularization parameter.
    * @param miniBatchFraction Fraction of data to be used per iteration.
    */
-  def train(
+  def train( kernelFunction: KernelFunction,
              input: RDD[LabeledPoint],
              numIterations: Int,
              stepSize: Double,
@@ -65,7 +65,7 @@ object SVMMultiClassOVAWithSGD {
 
       val inputProjection = input.map { case LabeledPoint(label, features) =>
         LabeledPoint(if (label == classId) 1.0 else 0.0, features)}.cache()
-      val model = SVMWithSGD.train(inputProjection, numIterations, stepSize, regParam, miniBatchFraction)
+      val model = SVMKernelizedWithSGD.train(kernelFunction, inputProjection, numIterations, stepSize, regParam, miniBatchFraction)
       inputProjection.unpersist(false)
 
       model.clearThreshold()
@@ -87,8 +87,8 @@ object SVMMultiClassOVAWithSGD {
    * @param numIterations Number of iterations of gradient descent to run.
    * @return a SVMModel which has the weights and offset from training.
    */
-  def train(input: RDD[LabeledPoint], numIterations: Int, stepSize: Double, regParam: Double): SVMMultiClassOVAModel =
-    train(input, numIterations, stepSize, regParam, 1.0)
+  def train(kernelFunction: KernelFunction, input: RDD[LabeledPoint], numIterations: Int, stepSize: Double, regParam: Double): SVMMultiClassOVAModel =
+    train(kernelFunction,input, numIterations, stepSize, regParam, 1.0)
 
   /**
    * Train a Multiclass SVM model given an RDD of (label, features) pairs,
@@ -98,6 +98,6 @@ object SVMMultiClassOVAWithSGD {
    * @param numIterations Number of iterations of gradient descent to run.
    * @return a SVMModel which has the weights and offset from training.
    */
-  def train(input: RDD[LabeledPoint], numIterations: Int): SVMMultiClassOVAModel = train(input, numIterations, 1.0, 0.01, 1.0)
+  def train(kernelFunction: KernelFunction, input: RDD[LabeledPoint], numIterations: Int): SVMMultiClassOVAModel = train(kernelFunction,input, numIterations, 1.0, 0.01, 1.0)
 
 }

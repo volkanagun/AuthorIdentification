@@ -11,6 +11,7 @@ import org.apache.spark.ml.feature.extraction.{EmoticonDetector, ModifiedTFIDF, 
 import org.apache.spark.ml.feature.reweighting.{IDFClass, ProbLIU}
 
 
+
 /**
   * Created by wolf on 11.12.2015.
   */
@@ -42,7 +43,8 @@ class NormalizationPipe {
 
     val emoticonTF = new ModifiedTFIDF()
     emoticonTF.setInputCol(emoticons.getOutputCol)
-    emoticonTF.setOutputCol("emoticon-features")
+    //emoticonTF.setOutputCol("emoticon-features")
+    emoticonTF.setOutputCol("features")
 
     val probliu = new ProbLIU()
       .setTermNormalization(false)
@@ -100,5 +102,6 @@ object NormalizationPipe {
   def main(args: Array[String]) {
     val pipe = new NormalizationPipe
     pipe.bowNormalization()
+
   }
 }

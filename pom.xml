@@ -14,6 +14,11 @@
             <id>apache opennlp snapshot</id>
             <url>https://repository.apache.org/content/repositories/snapshots/</url>
         </repository>
+        <repository>
+            <id>spark-amplab</id>
+            <url>http://dl.bintray.com/spark-packages/maven/</url>
+        </repository>
+
     </repositories>
 
     <properties>
@@ -79,6 +84,12 @@
         </dependency>
 
         <dependency>
+            <groupId>amplab</groupId>
+            <artifactId>spark-indexedrdd</artifactId>
+            <version>0.1</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.github.scopt</groupId>
             <artifactId>scopt_2.10</artifactId>
             <version>3.2.0</version>
@@ -89,6 +100,7 @@
             <artifactId>hadoop-common</artifactId>
             <version>2.4.0</version>
         </dependency>
+
 
         <!--<dependency>
             <groupId>com.google.collections</groupId>
@@ -122,7 +134,6 @@
             <artifactId>org.osgi.core</artifactId>
             <version>4.3.0</version>
         </dependency>
-
 
 
         <dependency>

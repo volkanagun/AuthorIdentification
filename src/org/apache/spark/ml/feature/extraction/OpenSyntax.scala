@@ -13,5 +13,6 @@ class OpenSyntax {
   // => Question start
   // => Question sentence without question mark
   // => Question sentence without stop punctuation
+  //
 
 }
