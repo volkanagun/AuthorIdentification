@@ -40,7 +40,6 @@ class RBFKernel(val gamma:Double) extends KernelFunction
     BLAS.scal(2*compute(weights,weights)/gamma, gradient)
     gradient
   }
-
 }
 
 

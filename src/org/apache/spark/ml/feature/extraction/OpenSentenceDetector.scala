@@ -1,6 +1,6 @@
 package org.apache.spark.ml.feature.extraction
 
-import opennlp.models.SentenceDetectorML
+import language.boundary.{SentenceML}
 import org.apache.spark.annotation.{DeveloperApi, Experimental}
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
@@ -24,7 +24,7 @@ class OpenSentenceDetector(override val uid: String) extends Transformer with Ha
   /** @group setParam */
   def setOutputCol(value: String): this.type = set(outputCol, value)
 
-  val sentenceDetectorML = new SentenceDetectorML()
+  val sentenceDetectorML = new SentenceML()
 
   override def transform(dataset: DataFrame): DataFrame = {
 

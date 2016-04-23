@@ -1,8 +1,9 @@
 package processing;
 
-import com.clearspring.analytics.util.DoublyLinkedList;
-import opennlp.models.SentenceDetectorML;
-import org.apache.spark.api.java.function.PairFunction;
+
+import language.boundary.SentenceML;
+import org.apache.spark.api.java.function.*;
+import processing.structures.stats.DatasetStats;
 import processing.structures.docs.*;
 import processing.utils.XMLParser;
 import processing.structures.summary.PANDoc;
@@ -12,13 +13,9 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.VoidFunction;
 import processing.comparators.TupleSizeComparator;
 import scala.Tuple2;
-import processing.structures.stats.AuthorStats;
-import processing.structures.stats.DocStats;
+
 import processing.structures.summary.ReutersDoc;
 
 import java.io.Serializable;
@@ -37,10 +34,10 @@ public class RDDProcessing implements Serializable {
     private String REUTERSDIRECTORY = "resources/reuters/reuters-article*";
 
     private String TWEETDIRECTORY = "resources/twitter/twitter*";
-    private String PANBINARYLARGEDIRECTORY = "resources/pan/binary-large";
-    private String PANLARGEDIRECTORY = "resources/pan/sources-large/*";
-    private String PANBINARYSMALLDIRECTORY = "resources/pan/binary-small";
-    private String PANSMALLDIRECTORY = "resources/pan/sources-small/*";
+    public static String PANBINARYLARGEDIRECTORY = "resources/pan/binary-large";
+    public static String PANLARGEDIRECTORY = "resources/pan/sources-large/*";
+    public static String PANBINARYSMALLDIRECTORY = "resources/pan/binary-small";
+    public static String PANSMALLDIRECTORY = "resources/pan/sources-small/*";
 
     public RDDProcessing() {
 
@@ -79,6 +76,53 @@ public class RDDProcessing implements Serializable {
     //////////////////////////////////////////////////////////
 
 
+    ///////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
+    //<editor-fold defaultstate="collapsed" desc="Dataset Statitics">
+    public DatasetStats buildPanStats(JavaSparkContext sparkContext, String directory){
+        JavaRDD<PANDoc> panRDD = panRDD(loadXML(sparkContext, directory));
+        DatasetStats stats = new DatasetStats();
+        //Distinct Authors
+        //Average Number of documents
+        //Each author's number of documents (min-max)
+
+        JavaPairRDD<String, Iterable<PANDoc>> authorDocRDD = panRDD.mapToPair(new PairFunction<PANDoc, String, PANDoc>() {
+            @Override
+            public Tuple2<String, PANDoc> call(PANDoc panDoc) throws Exception {
+                return new Tuple2<String, PANDoc>(panDoc.getAuthorid(),panDoc);
+            }
+        }).groupByKey();
+
+        JavaPairRDD<String,Long> authorCountRDD = authorDocRDD.mapValues(new Function<Iterable<PANDoc>, Long>() {
+            @Override
+            public Long call(Iterable<PANDoc> v1) throws Exception {
+                return new Long(IteratorUtils.toList(v1.iterator()).size());
+            }
+        });
+
+        final TupleSizeComparator comparator = new TupleSizeComparator();
+        Long authorCount = authorCountRDD.count();
+        Long minInstanceCount = authorCountRDD.min(new TupleSizeComparator())._2();
+        Long maxInstanceCount = authorCountRDD.max(new TupleSizeComparator())._2();
+
+        Long totalInstanceCount = authorCountRDD.reduce(new Function2<Tuple2<String, Long>, Tuple2<String, Long>, Tuple2<String, Long>>() {
+            @Override
+            public Tuple2<String, Long> call(Tuple2<String, Long> v1, Tuple2<String, Long> v2) throws Exception {
+                return new Tuple2<String, Long>("ALL",v1._2()+ v2._2());
+            }
+        })._2();
+
+        stats.setNumberOfClasses(authorCount);
+        stats.setMinInstancePerClass(minInstanceCount);
+        stats.setMaxInstancePerClass(maxInstanceCount);
+        stats.setTotalInstancePerClass(totalInstanceCount);
+
+        return stats;
+    }
+    //</editor-fold>
+    ///////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
+
     //Eliminate duplicates, empty records save as RDD JSon
     //Loading Flat XML : files RDD
 
@@ -104,82 +148,14 @@ public class RDDProcessing implements Serializable {
         }
     }
 
-    /**
-     * Filter null values: those have empty text content
-     *
-     * @param filesRDD
-     * @return
-     */
-    public JavaRDD<DocStats> mapDocStats(JavaPairRDD<String, String> filesRDD) {
-        //Articles, Blogs, Tweets
-        return filesRDD.flatMap(new RDDMapping.BuildDocStats());
 
-    }
 
     //</editor-fold>
     ///////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////
-    //<editor-fold defaultstate="collapsed" desc="Print">
-    public void printAuthorStats(JavaRDD<AuthorStats> rdd) {
-        rdd.foreach(new VoidFunction<AuthorStats>() {
-            @Override
-            public void call(AuthorStats authorStats) throws Exception {
-                System.out.println(authorStats.toString());
-            }
-        });
-    }
-    //</editor-fold>
-    ///////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////
 
 
-    /**
-     * Group documents by authors
-     *
-     * @param documentRDD
-     * @return AuthorRDD
-     */
-    public JavaPairRDD<String, Iterable<DocStats>> mapDocumentsByAuthor(JavaRDD<DocStats> documentRDD) {
-        return documentRDD.groupBy(new RDDMapping.GroupByPairAuthorStats());
-    }
-
-
-    public JavaRDD<AuthorStats> buildAuthorStats(JavaPairRDD<String, Iterable<DocStats>> documentRDD) {
-        return documentRDD.map(new RDDMapping.BuildAuthorStats());
-    }
-
-    /**
-     * Group documents by genre
-     *
-     * @param documentRDD
-     * @return
-     */
-    public JavaPairRDD<String, Iterable<DocStats>> mapDocumentsbyGenre(JavaRDD<DocStats> documentRDD) {
-        return documentRDD.groupBy(new Function<DocStats, String>() {
-            @Override
-            public String call(DocStats v1) throws Exception {
-                return documentGenre(v1.getDocument());
-            }
-        });
-    }
-
-
-    ///////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////
-    //<editor-fold defaultstate="collapsed" desc="Filtering based on DocStats">
-
-    public JavaRDD<AuthorStats> filterAuthorsByDocCount(JavaRDD<AuthorStats> authorStatsRDD) {
-        return authorStatsRDD.filter(new RDDMapping.AuthorDocCountFilter());
-    }
-
-    public JavaRDD<DocStats> filterDocStatsByMinCount(JavaRDD<DocStats> docStatsJavaRDD) {
-        return docStatsJavaRDD
-                .filter(new RDDMapping.DocCharCountFilter())
-                .filter(new RDDMapping.DocWordCountFilter());
-    }
 
     //</editor-fold>
     ///////////////////////////////////////////////////////////
@@ -385,7 +361,7 @@ public class RDDProcessing implements Serializable {
      */
     public JavaRDD<ReutersDoc> reutersRDD(JavaSparkContext sparkContext, PrintBuffer buffer, int topNtopics) {
 
-        final SentenceDetectorML sentenceDetectorML = new SentenceDetectorML();
+        final SentenceML sentenceDetectorML = new SentenceML();
 
         //Load files and parse documents
         JavaPairRDD<String, String> filesRDD = loadXML(sparkContext, new String[]{REUTERSDIRECTORY});
@@ -414,8 +390,6 @@ public class RDDProcessing implements Serializable {
                         reutersList.add(reutersDoc);
                     }
                 }
-
-
                 return reutersList;
             }
         });
@@ -462,26 +436,7 @@ public class RDDProcessing implements Serializable {
     //////////////////////////////////////////////////////////
 
 
-    public void mainStats(JavaSparkContext sc) {
-        final SparkConf conf = initCluster();
 
-        JavaSparkContext sparkContext = new JavaSparkContext(conf);
-        RDDProcessing processor = new RDDProcessing();
-
-
-        JavaPairRDD<String, String> filesRDD = processor.loadXML(sparkContext, new String[]{BLOGDIRECTORY,TWEETDIRECTORY,ARTICLEDIRECTORY});
-        //JavaRDD<DocStats> docRDD = sparkContext.objectFile("binary/docstats");
-
-        JavaRDD<DocStats> docRDD = processor.mapDocStats(filesRDD);
-        docRDD = processor.filterDocStatsByMinCount(docRDD);
-        docRDD.saveAsObjectFile("binary/docstats");
-
-        JavaPairRDD<String, Iterable<DocStats>> authorDocRDD = processor.mapDocumentsByAuthor(docRDD);
-        JavaRDD<AuthorStats> authorRDD = processor.buildAuthorStats(authorDocRDD);
-        JavaRDD<AuthorStats> authorFilteredRDD = processor.filterAuthorsByDocCount(authorRDD);
-        authorFilteredRDD.saveAsObjectFile("binary/authorstats");
-
-    }
 
     public static SparkConf initLocal() {
         Logger.getLogger("org").setLevel(Level.OFF);
@@ -489,11 +444,9 @@ public class RDDProcessing implements Serializable {
         Logger.getLogger("log4j.rootCategory").setLevel(Level.OFF);
 
         return new SparkConf()
-                .setAppName("Reuters Processing")
+                .setAppName("AuthorIdentification Processing")
                 .setMaster("local[6]")
                 .set("spark.executor.memory", "20g")
-                .set("spark.broadcast.blockSize", "50")
-                /*.set("spark.logConf", "true")*/
                 .set("log4j.rootCategory", Level.OFF.getName());
     }
 
@@ -528,9 +481,12 @@ public class RDDProcessing implements Serializable {
         SparkConf conf = initLocal();
         JavaSparkContext sc = new JavaSparkContext(conf);
         RDDProcessing processing = new RDDProcessing();
+
+
+        /*
         PrintBuffer buffer = new PrintBuffer();
         processing.panRDDLargeSave(sc);
-
+        */
 
         int debug = 0;
     }

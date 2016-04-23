@@ -112,8 +112,8 @@ object SVMTest {
 
     // Run training algorithm to build the model
     val numIterations = 500
-    val kernel:KernelFunction = new RBFKernel(1)
-    val model = SVMNonLinearWithSGD.trainParallel(kernel,training,numIterations,1,0.0001,0.5)
+    val kernel:KernelFunction = new RBFKernel(50)
+    val model = SVMNonLinearWithSGD.trainParallel(kernel,training,numIterations,0.05,0.0001,0.2)
 
     // Clear the default threshold.
     model.clearThreshold()
@@ -144,7 +144,7 @@ object SVMTest {
     val lambda = 0.001
     val numIterations = 1000
     val kernel:KernelFunction = new RBFKernel(100)
-    val model = SVMPPackSGD.train(kernel,lambda,1, data,numIterations)
+    val model = SVMPPackSGD.train(kernel,data,lambda,1, numIterations)
 
     // Clear the default threshold.
     model.clearThreshold()
@@ -167,7 +167,7 @@ object SVMTest {
     //originalSVM(sc)
     //kernelizedSVM(sc)
     //kernelizedNonLinearSVM(sc)
-    //kernelizedNonLinearParSVM(sc)
-    kernelizedNonLinearPPackSVM(sc)
+    kernelizedNonLinearParSVM(sc)
+    //kernelizedNonLinearPPackSVM(sc)
   }
 }

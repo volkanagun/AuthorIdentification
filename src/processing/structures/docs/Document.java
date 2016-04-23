@@ -88,6 +88,11 @@ public class Document implements Serializable {
         return type!=null && type.equals(REUTORS);
     }
 
+    public boolean isPAN(){
+        return type!=null && type.equals(PAN);
+    }
+
+
     public boolean isBlogArticle(){
         return type!=null && (type.equals(ARTICLE) || type.equals(BLOG));
     }

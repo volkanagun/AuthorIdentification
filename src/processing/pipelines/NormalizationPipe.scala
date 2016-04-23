@@ -1,15 +1,13 @@
 package processing.pipelines
 
 import org.apache.spark.SparkContext
-import org.apache.spark.ml.classification.modified.MultilayerPerceptronClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
-import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder, CrossValidatorEqually}
-import org.apache.spark.ml.{PipelineStage, Pipeline}
-import org.apache.spark.ml.classification.NaiveBayes
-import org.apache.spark.ml.feature.{IDF, HashingTF}
-import org.apache.spark.ml.feature.extraction.{EmoticonDetector, ModifiedTFIDF, OpenTokenizer, OpenSentenceDetector}
+import org.apache.spark.ml.tuning.{CrossValidator, CrossValidatorEqually, ParamGridBuilder}
+import org.apache.spark.ml.{Pipeline, PipelineStage}
+import org.apache.spark.ml.classification.{MultilayerPerceptronClassifier, NaiveBayes}
+import org.apache.spark.ml.feature.{HashingTF, IDF}
+import org.apache.spark.ml.feature.extraction.{EmoticonDetector, ModifiedTFIDF, OpenSentenceDetector, OpenTokenizer}
 import org.apache.spark.ml.feature.reweighting.{IDFClass, ProbLIU}
-
 
 
 /**

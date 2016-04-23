@@ -1,8 +1,8 @@
 package org.apache.spark.ml.feature
 
 import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NumericAttribute}
-import org.apache.spark.ml.feature.extraction._
-import org.apache.spark.ml.feature.reweighting.{OddsRatio, IDFClass}
+import org.apache.spark.ml.feature.extraction.{EmoticonDetector, _}
+import org.apache.spark.ml.feature.reweighting.{IDFClass, OddsRatio}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}

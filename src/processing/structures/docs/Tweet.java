@@ -15,8 +15,16 @@ public class Tweet extends Document {
         this.rtList = new ArrayList<>();
         this.links = new ArrayList<>();
         this.type = TWEET;
+        super.setType(TWEET);
     }
 
+    public Tweet(String author, String text) {
+        super(author, text);
+        this.rtList = new ArrayList<>();
+        this.links = new ArrayList<>();
+        this.type = TWEET;
+        super.setType(TWEET);
+    }
 
     @Override
     public String getAuthor() {

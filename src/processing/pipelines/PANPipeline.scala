@@ -1,12 +1,13 @@
 package processing.pipelines
 
+import data.document.{Context, TokenShape}
+import language.morphology.{EmptyTagModel, HasimAnalyzerImp}
 import org.apache.spark.api.java.JavaPairRDD
-import org.apache.spark.ml.classification.modified.DecisionTreeClassifier
-import org.apache.spark.ml.classification.{NaiveBayes, RandomForestClassifier}
+import org.apache.spark.ml.classification.{DecisionTreeClassifier, NaiveBayes, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.feature._
-import org.apache.spark.ml.feature.extraction._
-import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidatorEqually}
+import org.apache.spark.ml.feature.extraction.{EmoticonDetector, _}
+import org.apache.spark.ml.tuning.{CrossValidatorEqually, ParamGridBuilder}
 import org.apache.spark.ml.{Pipeline, PipelineStage}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.linalg.Matrix
@@ -52,6 +53,29 @@ class PANPipeline {
 
     val sc = new SparkContext(conf);
     return sc;
+  }
+
+  def datasetstats(sc:SparkContext, printBuffer:PrintBuffer): Unit ={
+    val sqlContext: SQLContext = new SQLContext(sc)
+    val processing: RDDProcessing = new RDDProcessing()
+    val smallDataset  = processing.buildPanStats(sc,RDDProcessing.PANSMALLDIRECTORY);
+    val largeDataset  = processing.buildPanStats(sc,RDDProcessing.PANLARGEDIRECTORY);
+
+    printBuffer.addLine("PAN SMALL Dataset:")
+    printBuffer.addLine("Author Size:"+smallDataset.getNumberOfClasses)
+    printBuffer.addLine("Min Documents/Author:"+smallDataset.getMinInstancePerClass)
+    printBuffer.addLine("Max Documents/Author:"+smallDataset.getMaxInstancePerClass)
+    printBuffer.addLine("Total Documents:"+smallDataset.getTotalInstancePerClass)
+    printBuffer.addLine("")
+    printBuffer.addLine("PAN LARGE Dataset:")
+    printBuffer.addLine("Author Size:"+largeDataset.getNumberOfClasses)
+    printBuffer.addLine("Min Documents/Author:"+largeDataset.getMinInstancePerClass)
+    printBuffer.addLine("Max Documents/Author:"+largeDataset.getMaxInstancePerClass)
+    printBuffer.addLine("Total Documents:"+largeDataset.getTotalInstancePerClass)
+
+
+
+
   }
 
   def pipeline(sc: SparkContext, datasetFilter:String, printBuffer: PrintBuffer): Unit = {
@@ -120,6 +144,11 @@ class PANPipeline {
     val wordForms = new WordForms()
       .setInputCol(tokenizer.getOutputCol)
       .setOutputCol("word-form-features")
+
+
+    val context = new Context()
+    val sentenceFeatureExtractor = new SentenceFeatureExtractor(context.sentenceTokenFeatures())
+
 
     //Already features in Vector
     val wordLengths = new WordLengthCount()
@@ -308,7 +337,10 @@ object Test {
   def main(args: Array[String]) {
     val pipeline = new PANPipeline()
     val buffer = new PrintBuffer
-    pipeline.pipeline(pipeline.local(),"SmallTrain", buffer)
+    pipeline.datasetstats(pipeline.local(),buffer)
+    buffer.print()
+    //pipeline.pipeline(pipeline.local(),"SmallTrain", buffer)
+
 
   }
 }

@@ -15,7 +15,7 @@ import org.apache.spark.sql.{DataFrame, functions}
  */
 class OpenPOSTagger(override val uid: String) extends Transformer with HasInputCol with HasOutputCol {
 
-  def this() = this(Identifiable.randomUID("post-tags"))
+  def this() = this(Identifiable.randomUID("pos-tags"))
 
   def setInputCol(value: String): this.type = set(inputCol, value)
 

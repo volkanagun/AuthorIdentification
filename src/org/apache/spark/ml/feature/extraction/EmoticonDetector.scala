@@ -1,5 +1,6 @@
 package org.apache.spark.ml.feature.extraction
 
+import options.{Dictionary, Resources}
 import org.apache.spark.ml.UnaryTransformer
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{ArrayType, DataType, StringType}
@@ -12,25 +13,10 @@ import scala.io.Source
 class EmoticonDetector(override val uid: String) extends UnaryTransformer[Seq[String], Seq[Seq[String]], EmoticonDetector] {
 
   val filename = "/home/wolf/Documents/java-projects/AuthorIdentification/resources/dictionary/emoticons/emoticons.txt"
-  lazy val emoticons = load()
+  lazy val emoticons = Dictionary.loadEmoticons()
 
   def this() = this(Identifiable.randomUID("emoticons"))
 
-  def load(): Map[String, String] = {
-    val text = Source.fromFile(filename).mkString
-    var map: Map[String, String] = Map()
-    text.split("\n").foreach(line => {
-      val split = line.split("\t")
-      val emoticonList = split(0).split("\\s+")
-      val emoticonMeaning = split(1).split("\\,(\\s+?)")
-
-      emoticonList.foreach(emo => {
-        map = map.+((emo, emoticonMeaning(0)))
-      })
-    })
-
-    map
-  }
 
   def print(): Unit ={
     emoticons.foreach(p=>{

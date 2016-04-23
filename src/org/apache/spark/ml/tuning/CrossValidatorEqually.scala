@@ -25,7 +25,7 @@ import org.apache.spark.ml._
 import org.apache.spark.ml.evaluation.Evaluator
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.mllib.util.{MLUtilsModified, MLUtilsModified$}
+import org.apache.spark.mllib.util.{MLUtils}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
 
@@ -36,6 +36,7 @@ private[ml] trait CrossValidatorParams extends ValidatorParams {
   /**
    * Param for number of folds for cross validation.  Must be >= 2.
    * Default: 3
+ *
    * @group param
    */
   val numFolds: IntParam = new IntParam(this, "numFolds",
@@ -81,7 +82,7 @@ with CrossValidatorParams with Logging {
     val numModels = epm.length
     val metrics = new Array[Double](epm.length)
 
-    val splits = MLUtilsModified.kFoldEqually(dataset.rdd, $(numFolds), 0)
+    val splits = MLUtils.kFoldEqually(dataset.rdd, $(numFolds), 0)
 
     splits.zipWithIndex.foreach { case ((training, validation), splitIndex) =>
       val trainingDataset = sqlCtx.createDataFrame(training, schema).cache()

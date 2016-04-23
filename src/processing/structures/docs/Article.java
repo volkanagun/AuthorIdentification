@@ -17,6 +17,8 @@ public class Article extends Document {
         this.paragraphList = new ArrayList<>();
     }
 
+
+
     public String getGenre() {
         return genre;
     }
@@ -45,6 +47,7 @@ public class Article extends Document {
     @Override
     public void setAuthor(String author) {
         super.setAuthor(author);
+
     }
 
     @Override

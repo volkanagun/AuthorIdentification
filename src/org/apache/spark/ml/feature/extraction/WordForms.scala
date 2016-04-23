@@ -69,10 +69,6 @@ class WordForms(override val uid: String) extends Transformer with HasInputCol w
           }
 
 
-
-
-
-
           //Capitalized
           if (sentence.forall(word => word.matches("\\p{Lu}+"))) {
             vector = vector.updated(6, vector(6) + 1);
