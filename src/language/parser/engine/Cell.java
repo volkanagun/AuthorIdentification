@@ -1,6 +1,7 @@
 package language.parser.engine;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ import java.util.List;
 public class Cell {
     private List<Match> matches;
     private int row, col;
-    private boolean extracted;
+    private boolean extracted = false;
 
     public Cell(int i, int j) {
         this.row = i;
@@ -29,6 +30,7 @@ public class Cell {
     }
 
     public List<Match> getMatches() {
+        Collections.sort(matches);
         return matches;
     }
 

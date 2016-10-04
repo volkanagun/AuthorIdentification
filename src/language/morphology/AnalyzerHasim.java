@@ -5,6 +5,7 @@
 package language.morphology;
 
 
+import options.Resources;
 import scala.collection.Seq;
 import util.TextFile;
 import util.TextPattern;
@@ -54,7 +55,7 @@ public class AnalyzerHasim implements Serializable {
     public static String regexLevelOne = "((\\[|\\s)\\[(.*?)\\](\\,|\\]))";
     public static String regexLevelTwo = "(\\])(\\+|\\-|'\\,)";
     public int count = 0;
-    private File folderParse = new File("/home/wolf/Documents/java-projects/MorphDisambiguator/morphology/exec/MP-1.0-Linux64/");
+    private File folderParse = new File(Resources.MorphologyResources$.MODULE$.morphExecFolder());
     private File folderDisamb = new File("/home/wolf/Documents/java-projects/MorphDisambiguator/morphology/exec/MD-Release/");
 
 
@@ -122,6 +123,33 @@ public class AnalyzerHasim implements Serializable {
         obtainResult(buffer.toString(),tokens, resultList);
     }
 
+    public void parseWindows(String[] tokens, List<MorphResult> resultList){
+        String sentence = toSentence(tokens);
+        sentence = sentence.replaceAll("'", "\\\\'");
+        sentence = sentence.replaceAll("\"", "\\\\\"");
+        sentence = sentence.replaceAll("\\(", "\\\\(");
+        sentence = sentence.replaceAll("\\)", "\\\\)");
+
+        //sentence = sentence.replaceAll("\\s", "\\\\ ");
+
+        StringBuffer buffer = new StringBuffer();
+
+        String command = parseCMD+" "+sentence;
+        CommandProcessor processor = new CommandProcessor(command, folderParse.getAbsoluteFile(), replacer, buffer);
+        processor.start();
+
+        while (processor.isAlive()) {
+        }
+
+        obtainResult(buffer.toString(),tokens, resultList);
+    }
+
+    public List<MorphResult> parseWindows(String[] tokens){
+        List<MorphResult> resultList = new ArrayList<>();
+        parseWindows(tokens,resultList);
+        return resultList;
+    }
+
     public List<MorphResult> parse(String[] tokens){
         List<MorphResult> resultList = new ArrayList<>();
         parse(tokens,resultList);
@@ -154,6 +182,8 @@ public class AnalyzerHasim implements Serializable {
         obtainResult(buffer.toString(), morphResult);
         return morphResult;
     }
+
+
 
 
     ///////////////////////////////////////////////////////////
@@ -291,7 +321,7 @@ public class AnalyzerHasim implements Serializable {
             MorphResult result = new MorphResult(morphBest[0]);
             String pos = extractPOS(morphBest[1]);
             String[] tags = morphBest[1].split("\\+");
-            MorphUnit morphUnit = new MorphUnit();
+            MorphUnit morphUnit = new MorphUnit(result.getToken());
             morphUnit.setStem(tags[0]);
             morphUnit.setPrimaryPos(pos);
             for (int i = 1; i < tags.length; i++) {
@@ -308,13 +338,14 @@ public class AnalyzerHasim implements Serializable {
         Pattern patternOne = Pattern.compile(regexLevelOne);
         Matcher matcherOne = patternOne.matcher(resultLine);
         int count = 0;
+        String token = morphResult.getToken();
         while (matcherOne.find()) {
-            MorphUnit morphunit = new MorphUnit();
+            MorphUnit morphunit = new MorphUnit(token);
             String group = matcherOne.group(3);
             String[] groupSplit = group.split(regexLevelTwo);
 
             if (group.contains("unknown")) {
-                morphResult.addMorphUnit(new MorphUnit());
+                morphResult.addMorphUnit(new MorphUnit(token));
                 break;
             } else if (count > 0) {
                 String[] morphySplit = groupSplit[0].split("\\[");

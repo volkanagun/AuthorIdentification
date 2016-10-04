@@ -1,7 +1,7 @@
 package org.apache.spark.mllib
 
 import org.apache.spark.annotation.Since
-import org.apache.spark.mllib.linalg.Vector
+
 
 import scala.beans.BeanInfo
 
@@ -13,8 +13,8 @@ import scala.beans.BeanInfo
   */
 @Since("0.8.0")
 @BeanInfo
-case class MultiLabeledPoint @Since("1.0.0")(@Since("0.8.0") label: Vector,
-                                             @Since("1.0.0") features: Vector) {
+case class MultiLabeledPoint (label: org.apache.spark.mllib.linalg.Vector,
+                                              features: org.apache.spark.mllib.linalg.Vector) {
 
   override def toString: String = {
     s"($label,$features)"

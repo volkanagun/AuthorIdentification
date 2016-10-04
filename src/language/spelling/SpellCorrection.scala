@@ -1,8 +1,10 @@
 package language.spelling
 
 import java.util.Locale
+
 import language.model.LanguageModel
 import language.tokenization.{MyTokenizer, TokenizerImp}
+import options.Resources
 
 /**
   * Created by wolf on 26.03.2016.
@@ -13,7 +15,7 @@ class SpellCorrection(val languageModel: LanguageModel, val tokenizer: Tokenizer
   val tr = new Locale("tr")
 
 
-  def this(tokenizerImp: TokenizerImp, maxPenalty: Double, ngram: Int) = this(new LanguageModel(ngram), tokenizerImp, maxPenalty, ngram)
+  def this(tokenizerImp: TokenizerImp, lmFilename:String, maxPenalty: Double,ngram: Int) = this(new LanguageModel(lmFilename), tokenizerImp, maxPenalty, ngram)
 
   def fit(sentences: Seq[String]): SpellCorrectionModel = {
 
@@ -33,10 +35,9 @@ class SpellCorrection(val languageModel: LanguageModel, val tokenizer: Tokenizer
         words.mkString(" ")
       })
       seq.foreach(word => {
-        if (word.toCharArray.forall(char => {
-          Character.isAlphabetic(char) || Character.isWhitespace(char)
-        }))
+        if (word.toCharArray.forall(char => {Character.isAlphabetic(char) || Character.isWhitespace(char)})) {
           spellChecker.addWord(word)
+        }
       })
     }
   }
@@ -86,6 +87,10 @@ class Span(var start: Int, var length: Int, var values: Seq[Token]) extends Seri
     values.map(value => new Node(value.value))
   }
 
+  /**
+    * Refurbish this code, this code is wrong
+    * @return
+    */
   def merge(): this.type = {
     val sorted = values.sortBy(token => {
       token.start - token.length
@@ -106,7 +111,7 @@ class Span(var start: Int, var length: Int, var values: Seq[Token]) extends Seri
       else {
         correct = correct :+ current
         current = next
-        i= i +1
+        i = i + 1
       }
 
     }
@@ -309,7 +314,7 @@ object SpellCorrection {
   val penalty = 2.0
   val ngram = 3
   val mytokenizer = new MyTokenizer
-  val spellCorrection = new SpellCorrection(mytokenizer, penalty, ngram)
+  val spellCorrection = new SpellCorrection(mytokenizer,Resources.LMResource.modelLM5TRFilename,  penalty, ngram)
 
   def main(args: Array[String]) {
     val correction = spellCorrection.fit(Seq("geldiğini görenler olmuş", "geldiği şüpheli", "görenler olsun"))

@@ -3,6 +3,8 @@ package language.boundary
 import java.io.{IOException, _}
 import java.nio.charset.Charset
 
+import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
 import opennlp.tools.sentdetect._
 import opennlp.tools.util.{ObjectStream, PlainTextByLineStream, TrainingParameters}
 import options.Resources
@@ -10,15 +12,17 @@ import options.Resources
 /**
   * Created by wolf on 05.04.2016.
   */
-class SentenceML extends Serializable{
-  val modelFilename = Resources.OpenSentenceBD.modelFilename
-  val sentenceDetector = new SentenceDetectorME(new SentenceModel(new File(modelFilename)))
+class SentenceML() extends Serializable {
+  var modelFilename = Resources.OpenSentenceBD.modelFilename
+  var sentenceDetector = new SentenceDetectorME(new SentenceModel(new File(modelFilename)))
 
   def fit(text: String): Array[String] = {
     this.synchronized{
       return sentenceDetector.sentDetect(text)
     }
   }
+
+
 
   @throws[IOException]
   def train(filename: String) {
@@ -41,10 +45,20 @@ class SentenceML extends Serializable{
       if (modelOut != null) modelOut.close
     }
   }
+
+  /*override def write(kryo: Kryo, output: Output): Unit = {
+    output.writeString(modelFilename)
+    kryo.writeClassAndObject(output, sentenceDetector)
+  }
+
+  override def read(kryo: Kryo, input: Input): Unit = {
+    modelFilename = input.readString()
+    sentenceDetector = kryo.readClassAndObject(input).asInstanceOf[SentenceDetectorME]
+  }*/
 }
 
 object SentenceML{
-  val sentenceML = new SentenceML
+  val sentenceML = new SentenceML()
 
   def main(args: Array[String]) {
     sentenceML.fit("Ali geldi. Gitti. Gördü.")

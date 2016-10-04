@@ -21,7 +21,7 @@ public class RuleTokenizer implements Serializable {
     public Regex dotCommaPunctuation = new Regex("dotCommaPunctuation", "(\\.|\\,)", "$1");
     public Regex hypPunctuation = new Regex("hypPunctuation", "(\\-)", "$1");
     public Regex numberRegex = new Regex("numberRegex", "(\\d+)", "$1");
-    public Regex numberDot = new Regex("numberRegex", "(\\d+([\\.\\,]\\d?)+)", "$1");
+    public Regex numberDot = new Regex("numberDotRegex", "(\\d+([\\.\\,]\\d?)+)", "$1");
 
     public Regex lowercaseLetter = new Regex("lowercaseLetter", "(\\p{Lo})", "$1");
     public Regex uppercaseLetter = new Regex("uppercaseLetter", "(\\p{Lu})", "$1");
@@ -32,8 +32,13 @@ public class RuleTokenizer implements Serializable {
 
     public Rule letters = Rule.createRule(new Regex("LETTERS","(\\p{L}+)","$1"));
     public Rule repeatingPunc = Rule.createRule(repeatingPunctuation);
+    public Rule numberDotRule = Rule.createRule(numberDot);
+
     public List<Rule> abbreviationRule = Rule.createRule("abbreviationRule",new Regex[]{uppercaseLetter,dotPunctuation});
     public List<Rule> abbreviationSemi = Rule.createRule("abbreviationRule",abbreviationRule,abbreviationRule);
+    public List<Rule> numberSingleRule = Rule.createRule("numberRule",new Regex[]{numberRegex});
+    public List<Rule> numberRule = Rule.createRule("numberRule",new Regex[]{numberRegex,dotCommaPunctuation, numberRegex});
+    public List<Rule> numberSemiRule = Rule.createRule("numberRule",numberRule, numberRule);
 
 
     //Tokenize punctuations
@@ -43,6 +48,9 @@ public class RuleTokenizer implements Serializable {
 
     public RuleTokenizer() {
         this.engine = new Engine();
+
+        this.engine.addRule(numberRule);
+        this.engine.addRule(numberSemiRule);
         this.engine.addRule(letters);
         this.engine.addRule(repeatingPunc);
         this.engine.addRule(abbreviationRule);
@@ -71,7 +79,7 @@ public class RuleTokenizer implements Serializable {
     public static void main(String[] args) {
         RuleTokenizer tokenizer = new RuleTokenizer();
 
-        String text = "U.S. 1000.000.000,00$ PhD... Ali Korkar icin odeme yaptilar...";
+        String text = "U.S. 1000.000.000,00$ 500 kere PhD...";
         String[] tokens = tokenizer.tokenizeDebug(text);
 
         for (String token : tokens) {

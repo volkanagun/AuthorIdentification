@@ -22,7 +22,7 @@ public class MorphUnit implements Serializable, Comparable<MorphUnit> {
     private String secondaryPos;
     private String tagString;
     private String fullSurface;
-    private String stem, lemma;
+    private String stem, lemma, token;
     private List<String[]> tags;
     private List<String> array;
     private boolean selected;
@@ -45,12 +45,14 @@ public class MorphUnit implements Serializable, Comparable<MorphUnit> {
         replaces.add(new String[]{"ReflexPP", "ReflexP"});
     }
 
-    public MorphUnit() {
+    public MorphUnit(String token) {
+
         tags = new LinkedList<>();
         array = new LinkedList<>();
         tagString = "";
 
 
+        this.token = token;
         this.finalPos = NONE;
         this.primaryPos = NONE;
         this.secondaryPos = NONE;
@@ -220,6 +222,13 @@ public class MorphUnit implements Serializable, Comparable<MorphUnit> {
             if (!tag[0].equals(NONE)) {
                 tagString += "+" + tag[0];
             }
+            else if(tag[0].equals(NONE) && token.matches("\\p{Punct}+")){
+                tagString = token + "+Punc";
+            }
+        }
+
+        if(tagString.equals(NONE) && token.matches("\\p{Punct}+")){
+            tagString = token + "+Punc";
         }
 
         return tagString;

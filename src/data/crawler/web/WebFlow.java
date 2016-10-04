@@ -1,10 +1,13 @@
 package data.crawler.web;
 
+import data.document.Document;
+import data.document.Document$;
 import options.Resources;
-import processing.structures.docs.Document;
+import org.apache.avro.generic.GenericData;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -64,7 +67,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
         //Link Download
         WebTemplate linkTemplate = new WebTemplate(LookupOptions.ARTICLEDIRECTORY, "author-links", "http://www.gazeteoku.com", "?page=")
                 .setNextPageStart(1)
-                .setNextPageSize(1);
+                .setNextPageSize(2);
         LookupPattern patternLinkArticle = new LookupPattern(LookupOptions.URL, LookupOptions.ARTICLE, "<div\\sclass=\"syList\">", "</div>");
         LookupPattern patternLink = new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLELINK, "<a href=\"", "\"\\s");
 
@@ -73,13 +76,13 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         //Article Download
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.ARTICLEDIRECTORY, "article-text", "http://www.gazeteoku.com")
-                .setType(Document.ARTICLE);
+                .setType(Resources.DocumentResources$.MODULE$.ARTICLE());
         LookupPattern nameLookup = new LookupPattern(LookupOptions.ARTICLE, LookupOptions.AUTHORNAME, "<span\\sclass=\"yiyName\">", "</span>")
                 .setStartMarker("<span")
                 .setEndMarker("</span>");
 
         LookupPattern titleLookup = new LookupPattern(LookupOptions.ARTICLE, LookupOptions.ARTICLETITLE, "<div\\sclass=\"quotesEnd\">", "</div>");
-        LookupPattern genreeLookup = new LookupPattern(LookupOptions.ARTICLE, LookupOptions.GENRE, LookupOptions.GENREPOLITICS);
+        LookupPattern genreeLookup = new LookupPattern(LookupOptions.TEXT, LookupOptions.GENRE, LookupOptions.GENREPOLITICS);
         LookupPattern paragraphLookup = new LookupPattern(LookupOptions.ARTICLE, LookupOptions.ARTICLEPARAGRAPH, "<p>", "</p>");
         LookupPattern contentLookup = new LookupPattern(LookupOptions.ARTICLE, LookupOptions.ARTICLETEXT, "<div\\sclass=\"articleBlock\\sclearfix\">", "</div>")
                 .setStartMarker("<div")
@@ -95,7 +98,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
                 .addPattern(contentLookup);
 
         articleTemplate.setMainPattern(articleLookup);
-        articleTemplate.setType(Document.ARTICLE);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.ARTICLEDOC());
 
         mainTemplate.addNext(linkTemplate, LookupOptions.AUTHORLINK);
         linkTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
@@ -130,18 +133,18 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.ARTICLEDIRECTORY, "article-text", "http://www.fotomac.com.tr")
                 .setCharset("Windows-1254")
-                .setType(Document.ARTICLE);
+                .setType(Resources.DocumentModel$.MODULE$.ARTICLEDOC());
         LookupPattern articlePattern = new LookupPattern(LookupOptions.CONTAINER, LookupOptions.ARTICLE, "<div class=\"detail news\">", "</div>")
                 .setStartMarker("<div")
                 .setEndMarker("</div>")
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.AUTHORNAME, "<span class=\"title\">", "</span>"))
-                .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.GENRE, LookupOptions.GENRESPORTS))
+                .addPattern(new LookupPattern(LookupOptions.LOOKUP, LookupOptions.GENRE, LookupOptions.GENRESPORTS))
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLETITLE, "<h1\\sid=\"NewsTitle\">", "</h1>"))
                 .addPattern(new LookupPattern(LookupOptions.TEXT, LookupOptions.ARTICLETEXT, "<p\\sid=\"NewsDescription\">", "</p>")
                         .setStartMarker("<p").setEndMarker("</p>"));
 
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.ARTICLE);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.ARTICLEDOC());
 
         linkTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         mainTemplate.addNext(linkTemplate, LookupOptions.AUTHORLINK);
@@ -185,7 +188,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", "http://webrazzi.com");
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -219,7 +222,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", "http://www.cokgezenlerkulubu.com/");
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -259,7 +262,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", "http://www.5harfliler.com/");
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
 
@@ -306,7 +309,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", "http://hayro.la");
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -344,7 +347,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", LookupOptions.EMPTYDOMAIN);
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -382,7 +385,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", LookupOptions.EMPTYDOMAIN);
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -402,13 +405,14 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         mainTemplate.setMainPattern(linkPattern);
         mainTemplate.setNextPageSuffix("/page/");
-        mainTemplate.setNextPageSize(30);
+        mainTemplate.setNextPageSize(5);
         mainTemplate.setNextPageStart(2);
 
         mainTemplate.addSeed("cinema", "http://www.egonomik.com/category/sinema");
         mainTemplate.addSeed("pc-games", "http://www.egonomik.com/category/oyunlar/");
         mainTemplate.addSeed("web-design", "http://www.egonomik.com/category/web-tasarim");
-        mainTemplate.addSeed("social-media", "http://www.egonomik.com/category/internet");
+        mainTemplate.addSeed("internet", "http://www.egonomik.com/category/internet");
+        mainTemplate.addSeed("fun", "http://www.egonomik.com/category/eglencelik/");
 
         LookupPattern articlePattern = new LookupPattern(LookupOptions.ARTICLE, LookupOptions.ARTICLETEXT, "<div\\sid=\"content\"", "</article>")
                 .setStartEndMarker("<div", "</div>")
@@ -423,7 +427,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", LookupOptions.EMPTYDOMAIN);
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
 
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -462,7 +466,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", LookupOptions.EMPTYDOMAIN);
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -495,7 +499,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", LookupOptions.EMPTYDOMAIN);
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -530,7 +534,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         WebTemplate articleTemplate = new WebTemplate(LookupOptions.BLOGDIRECTORY, "blog-text", LookupOptions.EMPTYDOMAIN);
         articleTemplate.setMainPattern(articlePattern);
-        articleTemplate.setType(Document.BLOG);
+        articleTemplate.setType(Resources.DocumentModel$.MODULE$.BLOGDOC());
 
         mainTemplate.addNext(articleTemplate, LookupOptions.ARTICLELINK);
         WebFlow webFlow = new WebFlow(mainTemplate);
@@ -566,7 +570,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
         mainTemplate.addFolder(LookupOptions.REUTERSSOURCEDIRECTORY);
 
         mainTemplate.setMainPattern(articlePattern);
-        mainTemplate.setType(Document.REUTORS);
+        mainTemplate.setType(Resources.DocumentModel$.MODULE$.REUTERSDOC());
         WebFlow webFlow = new WebFlow(mainTemplate);
         return webFlow;
     }
@@ -591,7 +595,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         mainTemplate.addFolder(LookupOptions.PANLARGEDIRECTORY);
         mainTemplate.setMainPattern(articlePattern);
-        mainTemplate.setType(Document.PAN);
+        mainTemplate.setType(Resources.DocumentModel$.MODULE$.PANDOC());
         WebFlow webFlow = new WebFlow(mainTemplate);
         return webFlow;
     }
@@ -608,7 +612,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
 
         mainTemplate.addFolder(LookupOptions.PANSMALLDIRECTORY);
         mainTemplate.setMainPattern(articlePattern);
-        mainTemplate.setType(Document.PAN);
+        mainTemplate.setType(Resources.DocumentModel$.MODULE$.PANDOC());
         WebFlow webFlow = new WebFlow(mainTemplate);
         return webFlow;
     }
@@ -628,6 +632,15 @@ public class WebFlow implements Serializable, Callable<Boolean> {
         });
     }
 
+    public static void batchSubmit(ExecutorService service, List<WebFlow> webFlows){
+        try {
+            service.invokeAll(webFlows);
+            service.shutdown();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
 
         ExecutorService service = Executors.newFixedThreadPool(5);
@@ -638,20 +651,28 @@ public class WebFlow implements Serializable, Callable<Boolean> {
         WebFlow flowHayrola = buildForHayrola();
         WebFlow flowSonBirseyler = buildForSonBirseyler();
         WebFlow flowEgonomic = buildForEgonomic();
-        WebFlow flowAcikEconomy = buildForAcikEconomy();
+        //WebFlow flowAcikEconomy = buildForAcikEconomy();
         WebFlow flowAvaz = buildForAvazAvaz();
         WebFlow flowMilliyet = buildForMilliyetBlog();
+        WebFlow flowGazeteOku = buildGazeteBatchFlow();
 
-        //submit(service,flowWebrazzi);
-        //submit(service,flowBesHarfliler);
-        //submit(service,flowGezenler);
-        //submit(service, flowHayrola);
-        //submit(service, flowHayrola);
-        //submit(service,flowEgonomic);
+        /*submit(service,flowWebrazzi);
+        submit(service,flowBesHarfliler);
+        submit(service,flowGezenler);
+        submit(service, flowHayrola);
+        submit(service,flowEgonomic);
         //submit(service, flowAcikEconomy);
-        //submit(service, flowAvaz);
+        submit(service, flowAvaz);
         submit(service, flowMilliyet);
+        submit(service, flowSonBirseyler);
+        submit(service, flowGazeteOku);
         service.shutdown();
+        */
+
+        List<WebFlow> flows = Arrays.asList(flowWebrazzi, flowBesHarfliler, flowGezenler,
+                flowHayrola, flowSonBirseyler,flowEgonomic,flowAvaz, flowMilliyet/*,flowGazeteOku*/);
+
+        batchSubmit(service, flows);
 
         /*WebFlow flowTrain = buildForPAN2011Small();
         flowTrain.execute();*/

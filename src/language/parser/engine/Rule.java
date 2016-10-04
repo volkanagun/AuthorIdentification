@@ -94,6 +94,12 @@ public class Rule implements Serializable {
         return label + "=" + left.getLabel() + " " + right.getLabel();
     }
 
+    public static Rule createRule(String label, Rule ruleLeft, Rule ruleRight) {
+        Rule rule = new Rule(label, ruleLeft.getLabel(), ruleRight.getLabel());
+        rule.setGenerated(false);
+        return rule;
+    }
+
     public static List<Rule> createRule(String label, List<Rule> ruleLeftList, List<Rule> ruleRightList) {
         List<Rule> ruleList = new ArrayList<>();
         Rule ruleLeft = ruleLeftList.get(ruleLeftList.size() - 1);

@@ -13,6 +13,11 @@ class MyTokenizer extends TokenizerImp {
   private val tokenizerFactory: TokenizerFactory = IndoEuropeanTokenizerFactory.INSTANCE
   private var model: TokenizerModel = TokenizerModel.build
 
+  private def normalize(sentence:String):String={
+    sentence
+    //sentence.replaceAll("[\'\\´\\`](\\s?)","")
+  }
+
   private def pretokenize(sentence: String): Seq[MyToken] = {
     val chars: Array[Char] = sentence.toCharArray
     val tokenizer: com.aliasi.tokenizer.Tokenizer = tokenizerFactory.tokenizer(chars, 0, chars.length)
@@ -30,8 +35,9 @@ class MyTokenizer extends TokenizerImp {
   }
 
   def tokenize(sentence: String): Seq[String] = {
-    val knownList = model.matching(sentence)
-    val tokenList = pretokenize(sentence)
+    val normalized = normalize(sentence)
+    val knownList = model.matching(normalized)
+    val tokenList = pretokenize(normalized)
     var resultList: Seq[String] = Seq[String]()
     var start: Int = 0
 
@@ -201,6 +207,6 @@ object MyTokenizer{
 
   def main(args: Array[String]) {
     val tokenizer = new MyTokenizer
-    tokenizer.tokenize("Kaynak : aliveli.com").foreach(token=>println(token))
+    tokenizer.tokenize("Kaynak'tan : aliveli.com").foreach(token=>println(token))
   }
 }

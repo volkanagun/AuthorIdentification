@@ -1,19 +1,22 @@
 package data.document
 
 import language.boundary.SentenceML
-import language.morphology.{MorphLight, MorphResult, AnalyzerImp}
+import language.morphology.{AnalyzerImp, MorphLight, MorphResult}
+import language.syntax.SyntaxML
 import language.tokenization.TokenizerImp
-import opennlp.models.SyntaxML
 
 /**
   * Created by wolf on 13.04.2016.
   */
-class Paragraph(var docid:String, var index:Int, var text:String) extends Serializable{
+case class Paragraph(var docid:String,var author:String, var index:Int, var text:String) extends Serializable{
+
+  def this(docid:String, index:Int, text:String) = this(docid,null,index,text)
+
 
   def toSentences(sentenceML: SentenceML) :Seq[Sentence] ={
     val sentenceTexts = sentenceML.fit(text)
     sentenceTexts.zipWithIndex.map{case(sentence, seq)=>{
-      new Sentence(hashCode(),seq, sentence)
+      new Sentence(hashCode(), author, seq, sentence)
     }}
   }
 

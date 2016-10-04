@@ -1,12 +1,13 @@
 package data.dataset
 
-import java.io.File
+import java.io.{File, PrintWriter}
 import java.util.Locale
 import java.util.regex.Pattern
 
+import com.cybozu.labs.langdetect.{Detector, DetectorFactory}
 import data.document.Document
 import options.{Parameters, Resources}
-import options.Resources.DocumentModel
+import options.Resources.{DocumentModel, DocumentResources}
 import org.xml.sax.SAXParseException
 import util.TextFile
 
@@ -16,68 +17,230 @@ import scala.xml.Node
   * Created by wolf on 10.04.2016.
   */
 
-object GenreMap{
-  val genreMap = Map[String,String](
-    "sinema"->"cinema",
-    "bilim"->"science",
-    "kadın"->"woman",
-    "html5"->"web-design",
-    "flash"->"web-design",
-    "jquery"->"web-design",
-    "css"->"web-design",
-    "grafik tasarım"->"web-design",
-    "site tanıtım"->"web-design",
-    "web-tasarım"->"web-design",
-    "template"->"web-design",
-    "php"->"web-design",
-    "müzik"->"music",
+class Replacement(val pattern: String, val replace: String) {
+  def replaceAll(text: String): String = {
+    text.replaceAll(pattern, replace)
+  }
+
+  def swapReplaceAll(text: String): String = {
+    text.replaceAll(replace, pattern)
+  }
+}
+
+object LangDetect {
+  DetectorFactory.loadProfile(Resources.LanguageDetector.profiles);
+
+  def detectLanguage(text: String): String = {
+    val detector = DetectorFactory.create();
+    detector.append(text);
+    try {
+      detector.detect()
+    }catch{
+      case e:Exception=> {
+        "en"
+      }
+    }
+  }
+
+  def isEnglish(text: String): Boolean = {
+    val label = detectLanguage(text)
+    label.equals("en")
+  }
+
+  def isForeign(text:String):Boolean = {
+    val label = detectLanguage(text)
+    !label.equals("tr")
+  }
+}
+
+object GenreMap {
+  val genreMap = Map[String, String](
+    "sinema" -> "cinema",
+    "bilim" -> "science",
+    "tıp" -> "science",
+    "çocuk psikolojisi" -> "science",
+    "psikoloji" -> "science",
+    "çevre bilinci" -> "science",
+
+    "kadın" -> "woman",
+    "bebek - çocuk" -> "woman",
+    "aşk - evlilik" -> "woman",
+    "ilişkiler" -> "woman",
+
+    "html5" -> "web-design",
+    "flash" -> "web-design",
+    "jquery" -> "web-design",
+    "css" -> "web-design",
+    "grafik tasarım" -> "web-design",
+    "web tasarım" -> "web-design",
+    "site tanıtım" -> "web-design",
+    "web-tasarım" -> "web-design",
+    "template" -> "web-design",
+    "php" -> "web-design",
+    "ilginç tasarımlar" -> "design",
+    "tasarım" -> "design",
+    "müzik" -> "music",
+
+    "spor" -> "sports",
+    "futbol" -> "sports",
+
+    "genel sağlık" -> "health",
+    "yoga / meditasyon" -> "health",
+    "estetik / güzellik" -> "health",
+    "sağlık" -> "health",
+    "sağlıklı yaşam" -> "health",
+    "beslenme / diyet" -> "health",
+
+    "gezi - tatil" -> "travel",
+    "coğrafya" -> "travel",
+    "dünya şehirleri" -> "travel",
 
 
-    "oyun"->"pc-games",
-    "oyunlar"->"pc-games",
-    "multimedya"->"pc-games",
-    "photoshop"->"pc-software",
-    "program"->"pc-software",
+    "oyun" -> "pc-games",
+    "oyunlar" -> "pc-games",
+    "multimedya" -> "pc-games",
+    "photoshop" -> "pc-software",
+    "program" -> "pc-software",
 
-    "internet"->"internet",
-    "telekom"->"internet",
-    "teknoloji"->"technology",
-    "dijital"->"technology",
+    "internet" -> "internet",
+    "telekom" -> "internet",
+    "teknoloji" -> "technology",
+    "dijital" -> "technology",
+    "webrazzitv" -> "technology",
+    "kariyer" -> "career",
+    "iş yaşamı - kariyer" -> "career",
 
-    "inceleme"->"tehcnology",
-    "mobil"->"mobil-technology",
-    "program"->"software-technology",
-    "android"->"mobil-technology",
 
-    "eğlencelik"->"fun",
-    "funny"->"fun",
-    "history"->"history",
-    "culture"->"culture",
-    "sanat"->"art",
-    "art"->"art",
-    "moda"->"trend",
+    "inceleme" -> "technology",
+    "bilişim" -> "technology",
+    "mobil" -> "mobil-technology",
+    "program" -> "software-technology",
+    "android" -> "mobil-technology",
 
-    "deli hikayeleri"->"essay",
-    "makaleler"->"essay",
-    "cesur bölge"->"essay",
+    "eğlencelik" -> "fun",
+    "mizah" -> "fun",
+    "funny" -> "fun",
+    "history" -> "history",
+    "tarih" -> "history",
 
-    "yatirim"->"economy",
-    "e-ticaret"->"marketting",
-    "pazarlama"->"marketting",
-    "girisimler"->"marketting",
 
-    "genel"->"general",
-    "social"->"general"
+    "culture" -> "culture",
+    "kültür" -> "culture",
+    "gündelik yaşam" -> "culture",
+    "astroloji" -> "culture",
+    "kültür - sanat" -> "culture",
+    "mimarlık" -> "culture",
+    "sosyoloji" -> "culture",
+    "yemek - mutfak" -> "culture",
+    "sanat" -> "art",
+    "art" -> "art",
+    "resim" -> "art",
+    "şiir" -> "art",
+
+    "inançlar" -> "religion",
+    "eğitim" -> "education",
+    "kişisel gelişim" -> "education",
+    "okullar" -> "education",
+    "sınavlar" -> "education",
+
+
+    "moda" -> "trend",
+    "magazin"->"trend",
+    "alışveriş - moda" -> "trend",
+
+    "etkinlikler" -> "events",
+    "etkinlikler / festivaller" -> "events",
+
+    "hukuk" -> "law",
+
+    "deli hikayeleri" -> "essay",
+    "makaleler" -> "essay",
+    "cesur bölge" -> "essay",
+    "deneme" -> "essay",
+    "öykü" -> "essay",
+    "edebiyat" -> "essay",
+    "kitap" -> "essay",
+    "felsefe" -> "essay",
+
+    "siyaset" -> "politics",
+
+    "yatirim" -> "economy",
+    "odeme-sistemleri" -> "economy",
+    "ödeme-sistemleri" -> "economy",
+    "türkiye ekonomisi" -> "economy",
+    "e-ticaret" -> "economy",
+    "ekonomi - finans" -> "economy",
+    "pazarlama" -> "marketting",
+    "girisimler" -> "marketting",
+
+    "genel" -> "general",
+    "social" -> "general",
+    "güncel" -> "general"
   )
 
-  def map(genre:String):String={
+  def map(genre: String): String = {
     genreMap.getOrElse(genre, genre)
   }
+}
+
+object HtmlReplaces {
+  val htmlReplaces = Array(
+    new Replacement("&nbsp;", " "), new Replacement("&iexcl;", "¡"), new Replacement("&cent;", ""), new Replacement("&pound;", "£"),
+    new Replacement("&curren;", "¤"), new Replacement("&yen;", "¥"), new Replacement("&brvbar;", "¦"), new Replacement("&sect;", "§"),
+    new Replacement("&uml;", "¨"), new Replacement("&copy;", "©"), new Replacement("&ordf;", "ª"), new Replacement("&laquo;", "«"),
+    new Replacement("&not;", "¬"), new Replacement("&shy;", ""), new Replacement("&reg;", "®"), new Replacement("&macr;", "¯"),
+    new Replacement("&deg;", "°"), new Replacement("&plusmn;", "±"), new Replacement("&sup2;", "²"), new Replacement("&sup3;", "³"),
+    new Replacement("&acute;", "´"), new Replacement("&micro;", "µ"), new Replacement("&para;", "¶"), new Replacement("&middot;", "·"),
+    new Replacement("&cedil;", "¸"), new Replacement("&sup1;", "¹"), new Replacement("&ordm;", "º"), new Replacement("&raquo;", "»"),
+    new Replacement("&frac14;", "¼"), new Replacement("&frac12;", "½"), new Replacement("&frac34;", "¾"), new Replacement("&iquest;", "¿"),
+    new Replacement("&Agrave;", "À"), new Replacement("&Aacute;", "Á"), new Replacement("&Acirc;", "Â"), new Replacement("&Atilde;", "Ã"),
+    new Replacement("&Auml;", "Ä"), new Replacement("&Aring;", "Å"), new Replacement("&AElig;", "Æ"), new Replacement("&Ccedil;", "Ç"),
+    new Replacement("&Egrave;", "È"), new Replacement("&Eacute;", "É"), new Replacement("&Ecirc;", "Ê"), new Replacement("&Euml;", "Ë"),
+    new Replacement("&Igrave;", "Ì"), new Replacement("&Iacute;", "Í"), new Replacement("&Icirc;", "Î"), new Replacement("&Iuml;", "Ï"),
+    new Replacement("&ETH;", "Ð"), new Replacement("&Ntilde;", "Ñ"), new Replacement("&Ograve;", "Ò"), new Replacement("&Oacute\\;", "Ó"),
+    new Replacement("&Ocirc;", "Ô"), new Replacement("&Otilde;", "Õ"), new Replacement("&Ouml;", "Ö"), new Replacement("&times;", "×"),
+    new Replacement("&Oslash;", "Ø"), new Replacement("&Ugrave;", "Ù"), new Replacement("&Uacute;", "Ú"), new Replacement("&Ucirc;", "Û"),
+    new Replacement("&Uuml;", "Ü"), new Replacement("&Yacute;", "Ý"), new Replacement("&THORN;", "Þ"), new Replacement("&szlig;", "ß"),
+    new Replacement("&agrave;", "à"), new Replacement("&aacute;", "á"), new Replacement("&acirc;", "â"), new Replacement("&atilde;", "ã"),
+    new Replacement("&auml;", "ä"), new Replacement("&aring;", "å"), new Replacement("&aelig;", "æ"), new Replacement("&ccedil;", "ç"),
+    new Replacement("&egrave;", "è"), new Replacement("&eacute;", "é"), new Replacement("&ecirc;", "ê"), new Replacement("&euml;", "ë"),
+    new Replacement("&igrave;", "ì"), new Replacement("&iacute;", "í"), new Replacement("&icirc;", "î"), new Replacement("&iuml;", "ï"),
+    new Replacement("&eth;", "ð"), new Replacement("&ntilde;", "ñ"), new Replacement("&ograve;", "ò"), new Replacement("&oacute;", "ó"),
+    new Replacement("&ocirc;", "ô"), new Replacement("&otilde;", "õ"), new Replacement("&ouml;", "ö"), new Replacement("&divide;", "÷"),
+    new Replacement("&oslash;", "ø"), new Replacement("&ugrave;", "ù"), new Replacement("&uacute;", "ú"), new Replacement("&ucirc;", "û"),
+    new Replacement("&uuml;", "ü"), new Replacement("&yacute;", "ý"), new Replacement("&thorn;", "þ"), new Replacement("&yuml;", "ÿ"),
+    new Replacement("&bull;", "•"), new Replacement("&hellip;", "…"), new Replacement("&prime;", "′"), new Replacement("&Prime;", "″"),
+    new Replacement("&oline;", "‾"), new Replacement("&frasl;", "⁄"), new Replacement("&weierp;", "℘"), new Replacement("&image;", "ℑ"),
+    new Replacement("&real;", "ℜ"), new Replacement("&trade;", "™"), new Replacement("&alefsym;", "ℵ"), new Replacement("&larr;", "←"),
+    new Replacement("&uarr;", "↑"), new Replacement("&rarr;", "→"), new Replacement("&darr;", "↓"), new Replacement("&barr;", "↔"),
+    new Replacement("&crarr;", "↵"), new Replacement("&lArr;", "⇐"), new Replacement("&uArr;", "⇑"), new Replacement("&rArr;", "⇒"),
+    new Replacement("&dArr;", "⇓"), new Replacement("&hArr;", "⇔"), new Replacement("&forall;", "∀"), new Replacement("&part;", "∂"),
+    new Replacement("&exist;", "∃"), new Replacement("&empty;", "∅"), new Replacement("&nabla;", "∇"), new Replacement("&isin;", "∈"),
+    new Replacement("&notin;", "∉"), new Replacement("&ni;", "∋"), new Replacement("&prod;", "∏"), new Replacement("&sum;", "∑"),
+    new Replacement("&minus;", "−"), new Replacement("&lowast", "∗"), new Replacement("&radic;", "√"), new Replacement("&prop;", "∝"),
+    new Replacement("&infin;", "∞"), new Replacement("&OEig;", "Œ"), new Replacement("&oelig;", "œ"), new Replacement("&Yuml;", "Ÿ"),
+    new Replacement("&spades;", "♠"), new Replacement("&clubs;", "♣"), new Replacement("&hearts;", "♥"), new Replacement("&diams;", "♦"),
+    new Replacement("&thetasym;", "ϑ"), new Replacement("&upsih;", "ϒ"), new Replacement("&piv;", "ϖ"), new Replacement("&Scaron;", "Š"),
+    new Replacement("&scaron;", "š"), new Replacement("&ang;", "∠"), new Replacement("&and;", "∧"), new Replacement("&or;", "∨"),
+    new Replacement("&cap;", "∩"), new Replacement("&cup;", "∪"), new Replacement("&int;", "∫"), new Replacement("&there4;", "∴"),
+    new Replacement("&sim;", "∼"), new Replacement("&cong;", "≅"), new Replacement("&asymp;", "≈"), new Replacement("&ne;", "≠"),
+    new Replacement("&equiv;", "≡"), new Replacement("&le;", "≤"), new Replacement("&ge;", "≥"), new Replacement("&sub;", "⊂"),
+    new Replacement("&sup;", "⊃"), new Replacement("&nsub;", "⊄"), new Replacement("&sube;", "⊆"), new Replacement("&supe;", "⊇"),
+    new Replacement("&oplus;", "⊕"), new Replacement("&otimes;", "⊗"), new Replacement("&perp;", "⊥"), new Replacement("&sdot;", "⋅"),
+    new Replacement("&lcell;", "⌈"), new Replacement("&rcell;", "⌉"), new Replacement("&lfloor;", "⌊"), new Replacement("&rfloor;", "⌋"),
+    new Replacement("&lang;", "⟨"), new Replacement("&rang;", "⟩"), new Replacement("&loz;", "◊"), new Replacement("&uml;", "¨"),
+    new Replacement("&lrm;", "")
+  )
 }
 
 object XMLParser {
 
   val tr = Parameters.trLocale
+
+  def docToXML(text: String): String = {
+    var ntext = text.replaceAll("&", "&amp;")
+    ntext
+  }
 
   def mapXMLTags(text: String): String = {
     var ntext = text.replaceAll("&amp;", "&")
@@ -88,190 +251,17 @@ object XMLParser {
     ntext
   }
 
+
   def cleanText(text: String): String = {
     //rewrite here vice versa text replace
     var ntext = text.replaceAll("\u001B", "")
+    ntext = HtmlReplaces.htmlReplaces
+      .foldLeft[String](ntext)((txt, replacement)=> replacement.replaceAll(txt))
 
-
-
-    ntext = ntext.replaceAll("&nbsp;", " ")
-    ntext = ntext.replaceAll("&iexcl;", "¡")
-    ntext = ntext.replaceAll("&cent;", "¢")
-    ntext = ntext.replaceAll("&pound;", "£")
-    ntext = ntext.replaceAll("&curren;", "¤")
-    ntext = ntext.replaceAll("&yen;", "¥")
-    ntext = ntext.replaceAll("&brvbar;", "¦")
-    ntext = ntext.replaceAll("&sect;", "§")
-    ntext = ntext.replaceAll("&uml;", "¨")
-    ntext = ntext.replaceAll("&copy;", "©")
-    ntext = ntext.replaceAll("&ordf;", "ª")
-    ntext = ntext.replaceAll("&laquo;", "«")
-    ntext = ntext.replaceAll("&not;", "¬")
-    ntext = ntext.replaceAll("&shy;", "")
-    ntext = ntext.replaceAll("&reg;", "®")
-    ntext = ntext.replaceAll("&macr;", "¯")
-    ntext = ntext.replaceAll("&deg;", "°")
-    ntext = ntext.replaceAll("&plusmn;", "±")
-    ntext = ntext.replaceAll("&sup2;", "²")
-    ntext = ntext.replaceAll("&sup3;", "³")
-    ntext = ntext.replaceAll("&acute;", "´")
-    ntext = ntext.replaceAll("&micro;", "µ")
-    ntext = ntext.replaceAll("&para;", "¶")
-    ntext = ntext.replaceAll("&middot;", "·")
-    ntext = ntext.replaceAll("&cedil;", "¸")
-    ntext = ntext.replaceAll("&sup1;", "¹")
-    ntext = ntext.replaceAll("&ordm;", "º")
-    ntext = ntext.replaceAll("&raquo;", "»")
-    ntext = ntext.replaceAll("&frac14;", "¼")
-    ntext = ntext.replaceAll("&frac12;", "½")
-    ntext = ntext.replaceAll("&frac34;", "¾")
-    ntext = ntext.replaceAll("&iquest;", "¿")
-    ntext = ntext.replaceAll("&Agrave;", "À")
-    ntext = ntext.replaceAll("&Aacute;", "Á")
-    ntext = ntext.replaceAll("&Acirc;", "Â")
-    ntext = ntext.replaceAll("&Atilde;", "Ã")
-    ntext = ntext.replaceAll("&Auml;", "Ä")
-    ntext = ntext.replaceAll("&Aring;", "Å")
-    ntext = ntext.replaceAll("&AElig;", "Æ")
-    ntext = ntext.replaceAll("&Ccedil;", "Ç")
-    ntext = ntext.replaceAll("&Egrave;", "È")
-    ntext = ntext.replaceAll("&Eacute;", "É")
-    ntext = ntext.replaceAll("&Ecirc;", "Ê")
-    ntext = ntext.replaceAll("&Euml;", "Ë")
-    ntext = ntext.replaceAll("&Igrave;", "Ì")
-    ntext = ntext.replaceAll("&Iacute;", "Í")
-    ntext = ntext.replaceAll("&Icirc;", "Î")
-    ntext = ntext.replaceAll("&Iuml;", "Ï")
-    ntext = ntext.replaceAll("&ETH;", "Ð")
-    ntext = ntext.replaceAll("&Ntilde;", "Ñ")
-    ntext = ntext.replaceAll("&Ograve;", "Ò")
-    ntext = ntext.replaceAll("&Oacute\\;", "Ó")
-    ntext = ntext.replaceAll("&Ocirc;", "Ô")
-    ntext = ntext.replaceAll("&Otilde;", "Õ")
-    ntext = ntext.replaceAll("&Ouml;", "Ö")
-    ntext = ntext.replaceAll("&times;", "×")
-    ntext = ntext.replaceAll("&Oslash;", "Ø")
-    ntext = ntext.replaceAll("&Ugrave;", "Ù")
-    ntext = ntext.replaceAll("&Uacute;", "Ú")
-    ntext = ntext.replaceAll("&Ucirc;", "Û")
-    ntext = ntext.replaceAll("&Uuml;", "Ü")
-    ntext = ntext.replaceAll("&Yacute;", "Ý")
-    ntext = ntext.replaceAll("&THORN;", "Þ")
-    ntext = ntext.replaceAll("&szlig;", "ß")
-    ntext = ntext.replaceAll("&agrave;", "à")
-    ntext = ntext.replaceAll("&aacute;", "á")
-    ntext = ntext.replaceAll("&acirc;", "â")
-    ntext = ntext.replaceAll("&atilde;", "ã")
-    ntext = ntext.replaceAll("&auml;", "ä")
-    ntext = ntext.replaceAll("&aring;", "å")
-    ntext = ntext.replaceAll("&aelig;", "æ")
-    ntext = ntext.replaceAll("&ccedil;", "ç")
-    ntext = ntext.replaceAll("&egrave;", "è")
-    ntext = ntext.replaceAll("&eacute;", "é")
-    ntext = ntext.replaceAll("&ecirc;", "ê")
-    ntext = ntext.replaceAll("&euml;", "ë")
-    ntext = ntext.replaceAll("&igrave;", "ì")
-    ntext = ntext.replaceAll("&iacute;", "í")
-    ntext = ntext.replaceAll("&icirc;", "î")
-    ntext = ntext.replaceAll("&iuml;", "ï")
-    ntext = ntext.replaceAll("&eth;", "ð")
-    ntext = ntext.replaceAll("&ntilde;", "ñ")
-    ntext = ntext.replaceAll("&ograve;", "ò")
-    ntext = ntext.replaceAll("&oacute;", "ó")
-    ntext = ntext.replaceAll("&ocirc;", "ô")
-    ntext = ntext.replaceAll("&otilde;", "õ")
-    ntext = ntext.replaceAll("&ouml;", "ö")
-    ntext = ntext.replaceAll("&divide;", "÷")
-    ntext = ntext.replaceAll("&oslash;", "ø")
-    ntext = ntext.replaceAll("&ugrave;", "ù")
-    ntext = ntext.replaceAll("&uacute;", "ú")
-    ntext = ntext.replaceAll("&ucirc;", "û")
-    ntext = ntext.replaceAll("&uuml;", "ü")
-    ntext = ntext.replaceAll("&yacute;", "ý")
-    ntext = ntext.replaceAll("&thorn;", "þ")
-    ntext = ntext.replaceAll("&yuml;", "ÿ")
-
-    ntext = ntext.replaceAll("&bull;", "•")
-    ntext = ntext.replaceAll("&hellip;", "…")
-    ntext = ntext.replaceAll("&prime;", "′")
-    ntext = ntext.replaceAll("&Prime;", "″")
-    ntext = ntext.replaceAll("&oline;", "‾")
-    ntext = ntext.replaceAll("&frasl;", "⁄")
-    ntext = ntext.replaceAll("&weierp;", "℘")
-    ntext = ntext.replaceAll("&image;", "ℑ")
-    ntext = ntext.replaceAll("&real;", "ℜ")
-    ntext = ntext.replaceAll("&trade;", "™")
-    ntext = ntext.replaceAll("&alefsym;", "ℵ")
-    ntext = ntext.replaceAll("&larr;", "←")
-    ntext = ntext.replaceAll("&uarr;", "↑")
-    ntext = ntext.replaceAll("&rarr;", "→")
-    ntext = ntext.replaceAll("&darr;", "↓")
-    ntext = ntext.replaceAll("&barr;", "↔")
-    ntext = ntext.replaceAll("&crarr;", "↵")
-    ntext = ntext.replaceAll("&lArr;", "⇐")
-    ntext = ntext.replaceAll("&uArr;", "⇑")
-    ntext = ntext.replaceAll("&rArr;", "⇒")
-    ntext = ntext.replaceAll("&dArr;", "⇓")
-    ntext = ntext.replaceAll("&hArr;", "⇔")
-    ntext = ntext.replaceAll("&forall;", "∀")
-    ntext = ntext.replaceAll("&part;", "∂")
-    ntext = ntext.replaceAll("&exist;", "∃")
-    ntext = ntext.replaceAll("&empty;", "∅")
-    ntext = ntext.replaceAll("&nabla;", "∇")
-    ntext = ntext.replaceAll("&isin;", "∈")
-    ntext = ntext.replaceAll("&notin;", "∉")
-    ntext = ntext.replaceAll("&ni;", "∋")
-    ntext = ntext.replaceAll("&prod;", "∏")
-    ntext = ntext.replaceAll("&sum;", "∑")
-    ntext = ntext.replaceAll("&minus;", "−")
-    ntext = ntext.replaceAll("&lowast", "∗")
-    ntext = ntext.replaceAll("&radic;", "√")
-    ntext = ntext.replaceAll("&prop;", "∝")
-    ntext = ntext.replaceAll("&infin;", "∞")
-    ntext = ntext.replaceAll("&OEig;", "Œ")
-    ntext = ntext.replaceAll("&oelig;", "œ")
-    ntext = ntext.replaceAll("&Yuml;", "Ÿ")
-    ntext = ntext.replaceAll("&spades;", "♠")
-    ntext = ntext.replaceAll("&clubs;", "♣")
-    ntext = ntext.replaceAll("&hearts;", "♥")
-    ntext = ntext.replaceAll("&diams;", "♦")
-    ntext = ntext.replaceAll("&thetasym;", "ϑ")
-    ntext = ntext.replaceAll("&upsih;", "ϒ")
-    ntext = ntext.replaceAll("&piv;", "ϖ")
-    ntext = ntext.replaceAll("&Scaron;", "Š")
-    ntext = ntext.replaceAll("&scaron;", "š")
-    ntext = ntext.replaceAll("&ang;", "∠")
-    ntext = ntext.replaceAll("&and;", "∧")
-    ntext = ntext.replaceAll("&or;", "∨")
-    ntext = ntext.replaceAll("&cap;", "∩")
-    ntext = ntext.replaceAll("&cup;", "∪")
-    ntext = ntext.replaceAll("&int;", "∫")
-    ntext = ntext.replaceAll("&there4;", "∴")
-    ntext = ntext.replaceAll("&sim;", "∼")
-    ntext = ntext.replaceAll("&cong;", "≅")
-    ntext = ntext.replaceAll("&asymp;", "≈")
-    ntext = ntext.replaceAll("&ne;", "≠")
-    ntext = ntext.replaceAll("&equiv;", "≡")
-    ntext = ntext.replaceAll("&le;", "≤")
-    ntext = ntext.replaceAll("&ge;", "≥")
-    ntext = ntext.replaceAll("&sub;", "⊂")
-    ntext = ntext.replaceAll("&sup;", "⊃")
-    ntext = ntext.replaceAll("&nsub;", "⊄")
-    ntext = ntext.replaceAll("&sube;", "⊆")
-    ntext = ntext.replaceAll("&supe;", "⊇")
-    ntext = ntext.replaceAll("&oplus;", "⊕")
-    ntext = ntext.replaceAll("&otimes;", "⊗")
-    ntext = ntext.replaceAll("&perp;", "⊥")
-    ntext = ntext.replaceAll("&sdot;", "⋅")
-    ntext = ntext.replaceAll("&lcell;", "⌈")
-    ntext = ntext.replaceAll("&rcell;", "⌉")
-    ntext = ntext.replaceAll("&lfloor;", "⌊")
-    ntext = ntext.replaceAll("&rfloor;", "⌋")
-    ntext = ntext.replaceAll("&lang;", "⟨")
-    ntext = ntext.replaceAll("&rang;", "⟩")
-    ntext = ntext.replaceAll("&loz;", "◊")
-    ntext = ntext.replaceAll("&uml;", "¨")
-    ntext = ntext.replaceAll("&lrm;", "")
+    /*
+    Invalid XML Tags are created never replace to &
+    ntext = ntext.replaceAll("&gt;", ">")
+    ntext = ntext.replaceAll("&lt;", "<")*/
 
     //Place is important
     ntext = ntext.replaceAll("&", "&amp;")
@@ -279,9 +269,39 @@ object XMLParser {
 
 
 
-    ntext = Pattern.compile("(<a\\s(.*?)>)",Pattern.DOTALL).matcher(ntext).replaceAll("")
+    ntext = Pattern.compile("(<a\\s(.*?)>)", Pattern.DOTALL).matcher(ntext).replaceAll("")
     ntext
 
+  }
+
+  def parseEvaluations(filename: String): Map[String, String] = {
+    val xmlMain = scala.xml.XML.loadFile(filename);
+    val xmlParams = (xmlMain \\ "MEASURE")
+    var paramMap = Map[String, String]()
+    xmlParams.map(param => {
+      val tag = (param.attribute("ATTR").get.head).text.trim
+      val value = param.text.trim
+      paramMap = paramMap + (tag -> value)
+    })
+    paramMap
+  }
+
+  def parseLabelEvaluations(filename: String): Map[String, Map[String, String]] = {
+    Map[String, Map[String, String]]()
+  }
+
+
+  def parseParameters(filename: String): Map[String, String] = {
+    //println("Parsing parameters of " + filename)
+    val xmlMain = scala.xml.XML.loadFile(filename);
+    val xmlParams = (xmlMain \\ "param")
+    var paramMap = Map[String, String]()
+    xmlParams.map(param => {
+      val tag = (param \ "tag").text.trim
+      val value = (param \ "value").text.trim
+      paramMap = paramMap + (tag -> value)
+    })
+    paramMap
   }
 
   def parseDocument(filename: String, text: String): Seq[Document] = {
@@ -306,9 +326,13 @@ object XMLParser {
         parsePAN(root, filename)
 
       }
-      else {
-        //Twitter
+      else if (docType.equals(Resources.DocumentModel.TWEET) || docType.equals(Resources.DocumentModel.TWITTER) || docType.equals(Resources.DocumentModel.TWITTERDOC) || docType.equals("T")) {
+        //PAN
         parseTweets(root, filename)
+
+      }
+      else {
+        Seq[Document]()
       }
     })
   }
@@ -408,7 +432,7 @@ object XMLParser {
       }
       else if (value.equals("GENRE")) {
         var genre: String = node.text.trim
-        if(genre!=null && !genre.isEmpty) {
+        if (genre != null && !genre.isEmpty) {
           genre = genre.toLowerCase(tr)
           document.setGenre(GenreMap.map(genre))
         }
@@ -444,7 +468,7 @@ object XMLParser {
       else if (value.equals("GENRE")) {
         var genre: String = node.text.trim
         if (genre != null & !genre.isEmpty) {
-          genre =  genre.toLowerCase(tr)
+          genre = genre.toLowerCase(tr)
           document.setGenre(GenreMap.map(genre))
         }
       }
@@ -476,7 +500,7 @@ object XMLParser {
       }
       catch {
         case sax: SAXParseException => {
-          seq = seq :+(filename, sax.getMessage, sax.getLineNumber, sax.getColumnNumber)
+          seq = seq :+ (filename, sax.getMessage, sax.getLineNumber, sax.getColumnNumber)
           del = del :+ filepath
         }
       }
@@ -508,19 +532,73 @@ object XMLParser {
     }
   }
 
+  protected def tweetDelete(contentText: String): Boolean = {
+    if (contentText != null) {
+      contentText.trim.startsWith("RT") || LangDetect.isForeign(contentText)
+    }
+    else {
+      true
+    }
+  }
+
   protected def authorDelete(authorText: String): Boolean = {
     if (authorText != null) {
-      (authorText.trim.contains("konuk")|| authorText.contains("/\">") || authorText.contains("\">") ||
+      (authorText.trim.contains("konuk") || authorText.contains("/\">") || authorText.contains("\">") ||
         authorText.contains("window.adsbygoogle"))
     }
     else {
       true
     }
   }
+
   //</editor-fold>
   ///////////////////////////////////////////////////////////
 
+  def filterTweets(folder: String): Seq[Document] = {
+    //Read tweets and write tweets again
+    val dir = new File(folder)
+    var seq = Seq[Document]()
 
+    dir.listFiles().foreach(file => {
+      val filename = file.getName
+      val filepath = file.getAbsolutePath
+      val text = TextFile.readText(file)
+      try {
+
+        val docSeq = XMLParser.parseDocument(filename, text)
+        seq = seq ++ (if (docSeq.isEmpty) {
+          Seq[Document]()
+        }
+        else {
+          val myseq = docSeq.filter(document => {
+            document.getDocType().equals(DocumentModel.TWITTERDOC) && !tweetDelete(document.getText())
+          })
+
+          myseq
+        })
+      }
+      catch{
+        case ex:Exception=>println("Error in filename: "+filename+" Message: "+ex.getMessage)
+      }
+    })
+
+    seq
+  }
+
+  def fixTweets(tweetFolder: String, fixName: String): Unit = {
+    val tweetDocs = filterTweets(DocumentResources.twitterDir)
+    new PrintWriter(tweetFolder + fixName) {
+      write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<ROOT LABEL=\"TWEET\">")
+
+      tweetDocs.foreach(doc => {
+        write(doc.toXML())
+      })
+
+      write("</ROOT>")
+      close()
+    }
+  }
 
 
   def fixFolder(folder: String): Unit = {
@@ -534,6 +612,7 @@ object XMLParser {
 
       val text = TextFile.readText(file)
       try {
+
         val docSeq = XMLParser.parseDocument(filename, text)
         if (docSeq.isEmpty) {
           del = del :+ filepath
@@ -551,7 +630,7 @@ object XMLParser {
           }
 
           val authorText = doc.getAuthor()
-          if(authorDelete(authorText)){
+          if (authorDelete(authorText)) {
             del = del :+ filepath
           }
 
@@ -560,7 +639,7 @@ object XMLParser {
       }
       catch {
         case sax: SAXParseException => {
-          seq = seq :+(filename, sax.getMessage, sax.getLineNumber, sax.getColumnNumber)
+          seq = seq :+ (filename, sax.getMessage, sax.getLineNumber, sax.getColumnNumber)
           del = del :+ filepath
         }
       }
@@ -573,22 +652,26 @@ object XMLParser {
     })
 
     println("Deleting " + del.length + " files from folder")
-    del.foreach(filename => {
-      println("Deleting filename : " + filename)
-      val file = new File(filename)
-      if (file.exists()) {
-        file.delete();
-      }
-
-    })
-
+    println("Delete all files? Y/N")
+    val line = Console.readLine()
+    if(line.trim.equals("Y")) {
+      del.foreach(filename => {
+        println("Deleting filename : " + filename)
+        val file = new File(filename)
+        if (file.exists()) {
+          file.delete();
+        }
+      })
+    }
 
   }
 
 
   def main(args: Array[String]) {
 
-    //XMLParser.fixFolder(Resources.DocumentResources.blogDir)
+    XMLParser.fixFolder(Resources.DocumentResources.articleDir)
+    XMLParser.fixFolder(Resources.DocumentResources.blogDir)
+    //XMLParser.fixTweets(Resources.DocumentResources.twitterDir, "twitter-main-0.xml")
     //XMLParser.checkFolder(Resources.DocumentResources.blogDir)
 
   }

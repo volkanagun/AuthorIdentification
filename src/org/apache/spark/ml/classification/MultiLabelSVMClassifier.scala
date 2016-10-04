@@ -6,7 +6,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.annotation.{Experimental, Since}
 import org.apache.spark.ml.param.shared.HasMaxIter
 import org.apache.spark.ml.param.{IntParam, ParamMap, ParamValidators}
-import org.apache.spark.ml.{MultiPredictionModel, MultiPredictor}
+import org.apache.spark.ml.bases.{MultiPredictionModel, MultiPredictor}
 import org.apache.spark.mllib.MultiLabeledPoint
 import org.apache.spark.mllib.classification.{SVMModel, SVMWithSGD}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -142,7 +142,6 @@ object MultiLabelSVMModel extends Loader[MultiLabelSVMModel] {
       SVMModel.load(sc, filepath)
     })
 
-    SVMWithSGD
 
     new MultiLabelSVMModel(models)
   }

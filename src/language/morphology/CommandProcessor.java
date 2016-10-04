@@ -18,7 +18,8 @@ import java.util.logging.Logger;
  */
 public class CommandProcessor extends Thread implements Serializable{
 
-    
+
+
     private List<String> lines;
     private final StringBuffer resultBuffer;
     private String cmd;
@@ -69,6 +70,57 @@ public class CommandProcessor extends Thread implements Serializable{
             Thread.sleep(time);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void executeWindowsCommand(){
+        String result = null;
+        try {
+
+            ProcessBuilder processBuilder;
+            if(cmd!=null) {
+                processBuilder = new ProcessBuilder("cmd.exe", "/C", "start", cmd);
+            }
+            else{
+                processBuilder = new ProcessBuilder(cmdArray);
+            }
+
+            processBuilder.directory(folder);
+            Process pr = processBuilder.start();
+
+
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(pr.getErrorStream()));
+            String mline;
+            result = "";
+
+            while ((mline = errorReader.readLine()) != null) {
+                System.out.println(mline);
+            }
+
+            errorReader.close();
+            pr.waitFor();
+
+
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+            String line;
+            result = "";
+            while ((line = reader.readLine()) != null) {
+                result += replacer.regexReplaceAll(line) + "\n";
+            }
+
+            reader.close();
+            pr.destroy();
+
+        } catch (InterruptedException | IOException ex) {
+
+            Logger.getLogger(CommandProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        if (result==null || result.isEmpty()) {
+            resultBuffer.setLength(0);
+        } else {
+            resultBuffer.append(result.substring(0, result.length() - 1));
         }
     }
 

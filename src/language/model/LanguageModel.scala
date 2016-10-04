@@ -2,18 +2,23 @@ package language.model
 
 import java.util
 
+import edu.berkeley.nlp.lm.NgramLanguageModel
 import edu.berkeley.nlp.lm.io.LmReaders
+import language.util.TextSlicer
 import options.Resources
+import options.Resources.LMResource
+import org.apache.spark.mllib.linalg.Vectors
 
 import scala.collection.JavaConversions
 
 /**
   * Created by wolf on 31.03.2016.
   */
-class LanguageModel(ngram: Int) {
+class LanguageModel(filename: String) {
 
-  val binaryFilename = Resources.LanguageModel.modelLM5TRFilename
-  val lm = LmReaders.readLmBinary[String](binaryFilename)
+
+  val lm = LmReaders.readLmBinary[String](filename)
+
 
   def score(sentence: String): Double = {
     val ngrams = toList(sentence)
@@ -45,18 +50,56 @@ class LanguageModel(ngram: Int) {
     val tokens = sentence.split("\\s")
     JavaConversions.seqAsJavaList(tokens)
   }
+}
+
+class PositionalModel(val chunkNum: Int) {
+
+  val genres = Array[String]("art","cinema","technology","music","politics")
+  val modelFilenames = genres.map(name=>LMResource.modelsDir+name+".bin")
+
+  val models = modelFilenames.map(filename => {
+    new LanguageModel(filename)
+  })
+
+
+
+  /**
+    *
+    * @param sentences sentences
+    * @return a vector of scores for several sentences
+    */
+  def scoreRegular(sentences: Seq[String]): Array[Vector[Double]] = {
+    val chunks = TextSlicer.chunkRegular(sentences, chunkNum)
+
+    models.map(model => {
+      chunks.map(group => {
+        val avg = group.foldLeft[Double](0.0){case (sum,sentence) => {
+           sum + model.score(sentence)/group.length
+        }}
+        math.abs(avg)
+      }).toVector
+    })
+  }
+
 
 
 }
 
 object LanguageModel {
 
-  val languageModel = new LanguageModel(5)
+  val languageModel = new LanguageModel(Resources.LMResource.modelLM5TRFilename)
 
   def main(args: Array[String]) {
-    val sc1 = languageModel.score("evli adam")
+
+    val sentences = Seq[String]("kayıptan haber alındı.", "kayıp çocuk", "ben bilmem.", "bilen bilir.", "nedendir bilinmez.",
+      "ondandır.")
+
+    new PositionalModel(1).scoreRegular(sentences).foreach(arr => println(arr.mkString(" ")))
+
+
+    /*val sc1 = languageModel.score("lardan")
     val sc2 = languageModel.score("değerli basın mensupları")
     println(sc1)
-    println(sc2)
+    println(sc2)*/
   }
 }

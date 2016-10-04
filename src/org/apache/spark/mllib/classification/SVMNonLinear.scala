@@ -2,12 +2,15 @@ package org.apache.spark.mllib.classification
 
 import breeze.linalg.DenseVector
 import edu.berkeley.cs.amplab.spark.indexedrdd.IndexedRDD
+import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.annotation.{Experimental, Since}
+import org.apache.spark.ml.classification.ClassifierParams
+import org.apache.spark.ml.util.{DefaultParamsWriter, MLWritable, MLWriter}
 import org.apache.spark.mllib.feature.StandardScaler
-import org.apache.spark.mllib.linalg.{BLAS, Vectors, Vector}
+import org.apache.spark.mllib.linalg.{BLAS, Vector, Vectors}
 import org.apache.spark.mllib.pmml.PMMLExportable
-import org.apache.spark.mllib.regression.{LabeledPoint, GeneralizedLinearModel}
+import org.apache.spark.mllib.regression.{GeneralizedLinearModel, LabeledPoint}
 import org.apache.spark.mllib.util.Saveable
 import org.apache.spark.rdd.RDD
 
@@ -65,10 +68,13 @@ class SVMNonLinearModel(kernel: KernelFunction, override val weights: Vector, ov
   override def save(sc: SparkContext, path: String): Unit = {}
 }
 
-class SVMNonLinearDualModel(kernel: KernelFunction, s: Double, model: RDD[(LabeledPoint, Double)])
-  extends ClassificationModel with Serializable with Saveable with PMMLExportable {
-  private var threshold: Option[Double] = Some(0.0)
-  private val parameters = model.collect()
+class SVMNonLinearDualModel(val kernel: KernelFunction, val s: Double, val parameters: Array[(LabeledPoint, Double)])
+  extends ClassificationModel with Serializable with PMMLExportable {
+  //TODO: Threshold ??
+  var threshold: Option[Double] = Some(0.0)
+
+
+
 
   /**
     * :: Experimental ::
@@ -104,8 +110,6 @@ class SVMNonLinearDualModel(kernel: KernelFunction, s: Double, model: RDD[(Label
 
 
   def predictPoint(dataMatrix: Vector): Double = {
-
-
     var sum = 0d
     for (i <- 0 until parameters.length) {
       val (k, v) = parameters.apply(i)
@@ -118,10 +122,18 @@ class SVMNonLinearDualModel(kernel: KernelFunction, s: Double, model: RDD[(Label
     }
   }
 
-  override protected def formatVersion: String = "1.0.0"
+  def predictRaw(dataMatrix:Vector):Vector={
+    var sum = 0d
+    for (i <- 0 until parameters.length) {
+      val (k, v) = parameters.apply(i)
+      sum += v * k.label * kernel.compute(dataMatrix, k.features)
+    }
+    val margin = s * sum
+    Vectors.dense(-margin, margin)
+  }
 
-  @Since("1.3.0")
-  override def save(sc: SparkContext, path: String): Unit = {}
+
+
 
   @Since("1.0.0")
   override def predict(testData: RDD[Vector]): RDD[Double] = {
@@ -211,10 +223,11 @@ object SVMNonLinearWithSGD {
     }
 
     new SVMNonLinearModel(kernelFunction, w, b)
+      .setThreshold(0.0)
   }
 
   def train(kernel: KernelFunction, training: RDD[LabeledPoint], numIterations: Int): SVMNonLinearModel = {
-    SVMNonLinearWithSGD.train(kernel, training, numIterations, 0.05, 0.0001, 0.5)
+    train(kernel, training, numIterations, 0.05, 0.0001, 0.5)
   }
 
 
@@ -299,8 +312,8 @@ object SVMPPackSGD {
 
 
   def train(kernelFunction: KernelFunction,
-            input: RDD[LabeledPoint],lambda: Double = 0.01,
-            minibatchSize: Int,
+            input: RDD[LabeledPoint], lambda: Double = 0.001,
+            ppackSize: Int = 2,
             numIterations: Int): SVMNonLinearDualModel = {
 
     val sc = input.sparkContext
@@ -318,13 +331,13 @@ object SVMPPackSGD {
     var j = 0
     var updateCount = 0
 
-    val pair_idx = sc.parallelize(Array.range(0, minibatchSize).flatMap(x => (Array.range(x, minibatchSize).map(y => (x, y)))))
+    val pair_idx = sc.parallelize(Array.range(0, ppackSize).flatMap(x => (Array.range(x, ppackSize).map(y => (x, y)))))
     val broad_kernel_func = sc.broadcast(kernelFunction)
 
     while (t <= numIterations) {
 
       //val sample = working_data.takeSample(true, minibatchSize)
-      val sample = indexed_data.takeSample(true, minibatchSize)
+      val sample = indexed_data.takeSample(true, ppackSize)
       val broad_sample = sc.broadcast(sample)
       val kernel = broad_kernel_func.value
       //val yp = broad_sample.value.map(x => (working_data.map { case (k, v) => (v._1.label * v._2 * kernel.compute(v._1.features, x._2._1.features)) }.reduce((a, b) => a + b)))
@@ -335,10 +348,10 @@ object SVMPPackSGD {
       val inner_prod = pair_idx.map(x => (x, kernel.compute(sample(x._1)._2._1.features, sample(x._2)._2._1.features))).collectAsMap()
 
       // Compute sub gradients
-      for (i <- 0 until minibatchSize) {
+      for (i <- 0 until ppackSize) {
         t = t + 1
         s = (1 - 1D / (t)) * s
-        for (j <- (i + 1) until (minibatchSize)) {
+        for (j <- (i + 1) until (ppackSize)) {
           yp(j) = (1 - 1D / (t)) * yp(j)
         }
         if (y(i) * yp(i) < 1) {
@@ -346,14 +359,14 @@ object SVMPPackSGD {
           alpha = sample(i)._2._2
           local_set = local_set + (sample(i)._1 ->(sample(i)._2._1, alpha + (1 / (lambda * t * s))))
 
-          for (j <- (i + 1) to (minibatchSize - 1)) {
+          for (j <- (i + 1) to (ppackSize - 1)) {
             yp(j) = yp(j) + y(j) / (lambda * t) * inner_prod((i, j))
           }
 
           if (norm > (1 / lambda)) {
             s = s * (1 / math.sqrt(lambda * norm))
             norm = (1 / lambda)
-            for (j <- (i + 1) to (minibatchSize - 1)) {
+            for (j <- (i + 1) to (ppackSize - 1)) {
               yp(j) = yp(j) / math.sqrt(lambda * norm)
             }
           }
@@ -370,14 +383,16 @@ object SVMPPackSGD {
       //to_forget.unpersist()
       updateCount = updateCount + 1
 
-      println("Iteration : " + t)
+      println(s"Iteration : $t/$numIterations")
 
     }
     //model = working_data.map { case (k, v) => (v._1, v._2) }.filter { case (k, v) => (v > 0) }.cache()
     model = indexed_data.map { case (k, v) => (v._1, v._2) }.filter { case (k, v) => (v > 0) }.cache()
+    val parameters = model.collect()
     //working_data.unpersist()
 
-    new SVMNonLinearDualModel(kernelFunction, s, model)
+    new SVMNonLinearDualModel(kernelFunction, s, parameters)
   }
 
 }
+

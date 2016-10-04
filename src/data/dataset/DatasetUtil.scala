@@ -1,5 +1,7 @@
 package data.dataset
 
+import data.document.Document
+import options.Resources.DocumentModel
 import org.apache.spark.rdd.RDD
 
 /**
@@ -7,6 +9,7 @@ import org.apache.spark.rdd.RDD
   */
 object DatasetUtil {
   def computePercentile(rdd: RDD[Int], tile: Double): Double = {
+    if(rdd.count()==0) return 0.0
     // NIST method; data to be sorted in ascending order
     val r = rdd.sortBy(x => x)
     val c = r.count()
@@ -26,6 +29,33 @@ object DatasetUtil {
         }
       }
     }
+  }
+
+  def panDataset(rdd:RDD[Document]) : RDD[Document]={
+    //find and extract Document authors
+    val rddKnown = rdd.filter(pan=>{
+      pan.author!=null && pan.text != null
+    })
+
+    val rddUnknown = rdd.filter(pan=>{
+      pan.author == null && pan.text != null
+    })
+
+    val rddAuthor = rdd.filter(pan=>{
+      pan.author!=null && pan.text == null
+    })
+
+    val docAuthorMap = rddAuthor.map(pan=>(pan.docid,pan.author)).collectAsMap()
+
+    val rddMapped = rddUnknown.map(pan=>{
+        new Document(pan.docid, pan.doctype, docAuthorMap.getOrElse(pan.docid,null))
+          .setText(pan.getText())
+          .setGenre(DocumentModel.PANDOC)
+    })
+
+    val rddFiltered = rddMapped.filter(pan=>{pan.author!=null && pan.text!=null})
+
+    rddFiltered.union(rddKnown)
   }
 
 

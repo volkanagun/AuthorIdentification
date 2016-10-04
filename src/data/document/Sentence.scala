@@ -6,7 +6,10 @@ import language.tokenization.{MyTokenizer, TokenizerImp}
 /**
   * Created by wolf on 13.04.2016.
   */
-class Sentence(var paragraphid: Int, var index:Int, var text:String) extends Serializable {
+case class Sentence(var paragraphid: Int,var author:String, var index:Int, var text:String) extends Serializable {
+
+
+  def this(paragraphid:Int, index:Int, text:String) = this(paragraphid,null,index,text)
 
 
   def tokens(myTokenizer: TokenizerImp) : Seq[String] = {
@@ -15,7 +18,7 @@ class Sentence(var paragraphid: Int, var index:Int, var text:String) extends Ser
 
   def morphs(myTokenizer: TokenizerImp, stemmer:AnalyzerImp): Seq[MorphLight] = {
     val tokenArr = tokens(myTokenizer).toArray
-    stemmer.disambiguateAsLightSeq(tokenArr)
+    stemmer.analyzeAsLightSeq(tokenArr)
   }
 
 

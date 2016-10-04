@@ -24,7 +24,8 @@ import org.apache.spark.ml.classification.MultiLabelPerceptronClassificationMode
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.param.shared.{HasMaxIter, HasSeed, HasTol}
 import org.apache.spark.ml.util._
-import org.apache.spark.ml.{MultiPredictionModel, MultiPredictor, MultiPredictorParams}
+import org.apache.spark.ml.bases.{MultiPredictionModel, MultiPredictor, MultiPredictorParams}
+
 import org.apache.spark.mllib.MultiLabeledPoint
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.sql.DataFrame
@@ -221,7 +222,7 @@ class MultiLabelPerceptronClassifier @Since("1.5.0")(
     //FeedForwardTrainer.setStackSize($(blockSize))
     FeedForwardTrainer.setStackSize(1)
     val mlpModel = FeedForwardTrainer.train(data)
-    new MultiLabelPerceptronClassificationModel(uid, myLayers, thresh, mlpModel.weights())
+    new MultiLabelPerceptronClassificationModel(uid, myLayers, thresh, mlpModel.weights)
   }
 
 }

@@ -1,4 +1,5 @@
 /*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -82,7 +83,7 @@ final class DecisionTreeClassifier(override val uid: String)
     val oldDataset: RDD[LabeledPoint] = extractLabeledPoints(dataset)
     val strategy = getOldStrategy(categoricalFeatures, numClasses)
     val trees = RandomForest.run(oldDataset, strategy, numTrees = 1, featureSubsetStrategy = "all",
-      seed = 0L, parentUID = Some(uid))
+      seed=1L, parentUID = Some(uid))
     trees.head.asInstanceOf[DecisionTreeClassificationModel]
   }
 
@@ -181,3 +182,4 @@ private[ml] object DecisionTreeClassificationModel {
     new DecisionTreeClassificationModel(uid, rootNode, -1)
   }
 }
+*/

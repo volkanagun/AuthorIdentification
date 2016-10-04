@@ -1,10 +1,13 @@
 package data.dataset
 
+import java.io.File
+
 import data.document.Document
 import options.Resources
 import options.Resources.DocumentResources
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
 /**
   * Created by wolf on 01.04.2016.
@@ -58,13 +61,17 @@ object DatasetLoader {
     rddFile.flatMap { case (filename, text) => {
       XMLParser.parseDocument(filename, text)
     }}
-
-
-
   }
+
   def loadObjectDocs(sc: SparkContext, directory: String): RDD[Document] = {
     sc.objectFile(directory)
   }
+
+  def loadDFDocs(sc: SparkContext, directory: String): DataFrame = {
+    (new SQLContext(sc)).read.load(directory)
+  }
+
+
 
   def loadDocuments(sc: SparkContext, directories: Array[String]): RDD[Document] = {
     val rddFiles: RDD[(String, String)] = loadFiles(sc, directories)
@@ -113,9 +120,11 @@ object DatasetLoader {
     rdd.saveAsObjectFile(directory)
   }
 
-  def saveHardDataset(rdd: RDD[Document]) = {
-
+  def exists(directory:String):Boolean={
+    new File(directory).exists()
   }
+
+
 
 }
 

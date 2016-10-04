@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: processing.RDDProcessing
+Main-Class: org.apache.spark.ml.MainExecutor$
 

@@ -122,7 +122,7 @@ public class CommandSentenceTrMorph {
             for (int i = 1; i < lines.length; i++) {
                 String result = lines[i];
                 if (!result.endsWith("?")) {
-                    MorphUnit morphUnit = new MorphUnit();
+                    MorphUnit morphUnit = new MorphUnit(token);
                     Matcher matcher = pattern.matcher(result);
                     String postag = MorphUnit.NONE;
                     String secpos = MorphUnit.NONE;

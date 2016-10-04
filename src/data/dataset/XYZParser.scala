@@ -2,7 +2,7 @@ package data.dataset
 
 import data.document
 import options.Resources.DocumentModel
-import processing.structures.docs._
+
 
 import scala.collection.immutable.Stack
 import scala.util.control.Breaks

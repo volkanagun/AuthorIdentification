@@ -14,7 +14,11 @@ public interface AnalyzerImp extends Serializable
     String[] tokenize(String sentence);
 
     MorphResult analyze(String token);
+    MorphLight analyzeAsLight(String token);
+
     String stem(String token);
+    String stemSnowball(String token);
+    Seq<String> stemBy(String[] tokens, String posFilter);
 
 
     Seq<MorphResult> analyzeAsSeq(String[] tokens);

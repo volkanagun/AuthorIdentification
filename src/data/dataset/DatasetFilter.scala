@@ -7,8 +7,10 @@ import data.document.Document
 import language.tokenization.MyTokenizer
 import options.Resources
 import options.Resources.DocumentModel
+import org.apache.spark.ml.pipes.LoaderPipe
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, Row, functions}
 
 /**
   * Created by wolf on 01.04.2016.
@@ -69,6 +71,10 @@ object DatasetFilter {
     rdd.groupBy(document => {
       document.getAuthor()
     }).map(pair => (pair._1, pair._2.toList.length))
+  }
+
+  def countDocumentsByAuthorDF(df:DataFrame): DataFrame = {
+    df.groupBy(LoaderPipe.authorCol).count()
   }
 
   def countGenresByAuthorRDD(rdd: RDD[Document]): Array[(String, Long)] = {
@@ -228,10 +234,24 @@ object DatasetFilter {
     })
   }
 
+  def filterArticles(df: DataFrame): DataFrame = {
+    df.filter(df(LoaderPipe.doctypeCol)===DocumentModel.ARTICLEDOC)
+  }
+
+
+
   def filterBlogs(rdd: RDD[Document]): RDD[Document] = {
     rdd.filter(d => {
       d.isBlog()
     })
+  }
+
+  def filterBlogs(df: DataFrame): DataFrame = {
+    df.filter(df(LoaderPipe.doctypeCol)===DocumentModel.BLOGDOC)
+  }
+
+  def filterArticlesOrBlogs(df: DataFrame): DataFrame = {
+    df.filter(df(LoaderPipe.doctypeCol)===DocumentModel.BLOGDOC || df(LoaderPipe.doctypeCol)===DocumentModel.ARTICLEDOC)
   }
 
   def filterTweets(rdd: RDD[Document]): RDD[Document] = {
@@ -239,6 +259,11 @@ object DatasetFilter {
       d.isTweet()
     })
   }
+
+  def filterTweets(df: DataFrame): DataFrame = {
+    df.filter(df(LoaderPipe.doctypeCol)===DocumentModel.TWITTERDOC)
+  }
+
 
   def filterByMinDistinctWords(rdd: RDD[Document], tokenizer: MyTokenizer, minDistinct: Int = 5): RDD[Document] = {
     rdd.map(d => {
@@ -264,11 +289,30 @@ object DatasetFilter {
       authorMap.contains(d.getAuthor())
     })
   }
+
+  def filterAuthorDocsByMinDocSize(df: DataFrame, minDocSize: Int): DataFrame = {
+    val authorDF = countDocumentsByAuthorDF(df)
+    val authorArr = authorDF.filter(authorDF("count") >= minDocSize)
+      .map(row=>row.getString(0)).collect()
+
+    df.filter(df(LoaderPipe.authorCol).isin(authorArr:_*))
+
+  }
+
   def filterAuthorDocsByMaxDocSize(rdd: RDD[Document], maxDocSize: Int = 100): RDD[Document] = {
     val authorMap = countDocumentsByAuthor(rdd).filter(pair => pair._2 < maxDocSize).toMap
     rdd.filter(d => {
       authorMap.contains(d.getAuthor())
     })
+  }
+
+  def filterAuthorDocsByMaxDocSize(df: DataFrame, maxDocSize: Int): DataFrame = {
+    val authorDF = countDocumentsByAuthorDF(df)
+    val authorArr = authorDF.filter(authorDF("count") < maxDocSize)
+      .map(row=>row.getString(0)).collect()
+
+    df.filter(df(LoaderPipe.authorCol).isin(authorArr:_*))
+
   }
 
   def filterAuthorDocsByPercentile(rdd: RDD[Document], tile:Double, above:Boolean=true): RDD[Document] = {
@@ -288,10 +332,40 @@ object DatasetFilter {
     })
   }
 
+  def filterAuthorDocsByDFPercentile(df: DataFrame, tile:Double, above:Boolean = true): DataFrame = {
+    val authorDF = countDocumentsByAuthorDF(df)
+
+    val docSizeRDD = authorDF.select("count").map(row=>row.getInt(0))
+    val value = DatasetUtil.computePercentile(docSizeRDD, tile)
+    val array = if(above) {
+      authorDF.filter(authorDF("count") > value)
+        .select(LoaderPipe.authorCol)
+        .map(row=>row.getString(0))
+        .collect()
+    }
+    else{
+      authorDF.filter(authorDF("count") < value)
+        .select(LoaderPipe.authorCol)
+        .map(row=>row.getString(0))
+        .collect()
+    }
+
+    df.filter(df(LoaderPipe.authorCol).isin(array:_*))
+
+  }
+
+
+
   def filterAuthorDocsByPercentile(rdd:RDD[Document], tileAbove:Double, tileBelow:Double) : RDD[Document]={
     val rddBelow = DatasetFilter.filterAuthorDocsByPercentile(rdd,tileAbove, false)
     val frdd= DatasetFilter.filterAuthorDocsByPercentile(rdd,tileBelow, true)
     frdd.union(rddBelow)
+  }
+
+  def filterAuthorDocsByPercentile(df:DataFrame, tileAbove:Double, tileBelow:Double) : DataFrame = {
+    val dfBelow = DatasetFilter.filterAuthorDocsByDFPercentile(df,tileAbove, false)
+    val dfAbove= DatasetFilter.filterAuthorDocsByDFPercentile(df,tileBelow, true)
+    dfAbove.unionAll(dfBelow)
   }
 
 
@@ -305,11 +379,72 @@ object DatasetFilter {
     else frdd.filter(pair => pair._2 < value).map(pair=>pair._1)
   }
 
-  def filterDocsByPercentile(rdd: RDD[Document], func: Function1[Document, (Document, Int)], tileAbove: Double, tileBelow: Double): RDD[Document] = {
-    val rddBelow = DatasetFilter.filterDocsByPercentile(rdd,func,tileAbove, false)
-    val frdd= DatasetFilter.filterDocsByPercentile(rdd,func,tileBelow, true)
-    frdd.union(rddBelow)
+
+   def filterDocsByBetweenPercentile(rdd: RDD[Document], func: Function1[Document, (Document, Int)], tileAbove: Double, tileBelow:Double): RDD[Document] = {
+    val frdd = rdd.map(func)
+    val myrdd = frdd.map(pair => pair._2)
+    val aboveValue = DatasetUtil.computePercentile(myrdd, tileAbove)
+    val belowValue = DatasetUtil.computePercentile(myrdd, tileBelow)
+    println("Percentile above value : " + aboveValue)
+    println("Percentile below value : " + belowValue)
+    frdd.filter(pair => pair._2 < aboveValue && pair._2 > belowValue).map(pair => pair._1)
   }
+
+  def filterDocsBySizePercentile(df: DataFrame, colName:String, func: Function1[Row, Int], tileAbove: Double, tileBelow:Double): DataFrame = {
+    val frdd = df.select(colName).map(func)
+
+    val aboveValue = DatasetUtil.computePercentile(frdd, tileAbove)
+    val belowValue = DatasetUtil.computePercentile(frdd, tileBelow)
+    println("Percentile above value : " + aboveValue)
+    println("Percentile below value : " + belowValue)
+    df.filter(functions.size(df(colName)) < aboveValue && functions.size(df(colName)) > belowValue)
+  }
+
+  def filterDocsByLengthPercentile(df: DataFrame, colName:String, func: Function1[Row, Int], tileAbove: Double, tileBelow:Double): DataFrame = {
+    val frdd = df.select(colName).map(func)
+
+    val aboveValue = DatasetUtil.computePercentile(frdd, tileAbove)
+    val belowValue = DatasetUtil.computePercentile(frdd, tileBelow)
+    println("Percentile above value : " + aboveValue)
+    println("Percentile below value : " + belowValue)
+    df.filter(functions.length(df(colName)) < aboveValue && functions.length(df(colName)) > belowValue)
+  }
+
+
+
+  def filterDocsByLengthPercentile(df: DataFrame, filterCol:String, func: Function1[Row, Int], tile: Double, above: Boolean = true): DataFrame = {
+
+    val frdd = df.select(filterCol).map(func)
+    val value = DatasetUtil.computePercentile(frdd, tile)
+    println("Percentile value : " + value)
+
+    if (above) df.filter(functions.length(df(filterCol)).>=(value))
+    else df.filter(functions.length(df(filterCol)).<(value))
+  }
+
+  def filterDocsBySizePercentile(df: DataFrame, filterCol:String, func: Function1[Row, Int], tile: Double, above: Boolean = true): DataFrame = {
+
+    val frdd = df.select(filterCol).map(func)
+    val value = DatasetUtil.computePercentile(frdd, tile)
+    println("Percentile value : " + value)
+
+    if (above) df.filter(functions.size(df(filterCol)).>=(value))
+    else df.filter(functions.size(df(filterCol)).<(value))
+  }
+
+
+  def filterDocsByMinTextLength(df:DataFrame, filterCol:String, minLength:Int):DataFrame={
+    df.filter(functions.length(df(filterCol)) >= minLength)
+  }
+
+
+  def filterDocsByPercentile(df: DataFrame, filterCol:String, func: Function1[Row, Int], tileAbove: Double, tileBelow: Double): DataFrame = {
+    val dfBelow = DatasetFilter.filterDocsByLengthPercentile(df,filterCol, func, tileAbove, false)
+    val dfHigher= DatasetFilter.filterDocsByLengthPercentile(df,filterCol, func,tileBelow, true)
+    dfHigher.intersect(dfBelow)
+  }
+
+
 
   def filterDocsByPercentile(rdd: RDD[Document], func: Function1[Document, (Document, Int)], tile: Double): RDD[Document] = {
     val frdd = rdd.map(func)

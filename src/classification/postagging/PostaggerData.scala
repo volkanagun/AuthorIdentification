@@ -5,10 +5,6 @@ import scala.util.control.Breaks
 /**
   * Created by wolf on 11.04.2016.
   */
-class PostaggerData {
-  //prepare the data, read, write models
-  //Map data if necessary
-}
 
 class LabelSet {
   var replaces = Seq[(Array[String], String)]()
@@ -118,7 +114,7 @@ object SelectedTagSet extends LabelSet {
 
 }
 
-object CaseLabelSet extends LabelSet{
+object CaseTagSet extends LabelSet(){
   replaces = replaces :+(Array("Dat"), "Dat")
   replaces = replaces :+(Array("Loc"), "Loc")
   replaces = replaces :+(Array("Abl"), "Abl")
@@ -183,7 +179,7 @@ object PennLabelSet extends LabelSet {
 
 
   def main(args: Array[String]) {
-    println(enrichTags("kendi+Pron+Reflex+A3sg+P3sg+Nom"))
+    println(CaseTagSet.enrichTags("kendi+Pron+Reflex+A3sg+P3sg+Nom"))
   }
 
 }

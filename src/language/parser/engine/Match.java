@@ -12,7 +12,9 @@ public class Match implements Serializable, Comparable<Match> {
 
     private String label,value;
     private int start, end;
+    private boolean isTaken = false;
     private boolean isExtracted, generated, regex;
+
     private List<Match> groups;
 
     public Match(String label, int start, int end) {
@@ -67,6 +69,14 @@ public class Match implements Serializable, Comparable<Match> {
         groups.clear();
     }
 
+    public boolean isTaken() {
+        return isTaken;
+    }
+
+    public void setTaken(boolean taken) {
+        isTaken = taken;
+    }
+
     public boolean contains(Match match){
         return start <= match.start && end >= match.end;
     }
@@ -113,6 +123,16 @@ public class Match implements Serializable, Comparable<Match> {
             submatch.setIsExtracted(true);
         }
 
+    }
+
+    public boolean containsExtracted(){
+        if(!isExtracted){
+            for(Match subMatch:groups){
+                if(subMatch.isExtracted) return true;
+            }
+        }
+
+        return isExtracted;
     }
 
     public boolean isValue(){

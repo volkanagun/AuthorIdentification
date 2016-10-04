@@ -1,5 +1,6 @@
 package data.crawler.twitter;
 
+import data.dataset.XMLParser;
 import data.document.Document;
 import data.dataset.XYZParser;
 import options.Resources;
@@ -116,14 +117,20 @@ public class TwitterTimeLine implements Serializable {
 
         String rootOpenXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ROOT LABEL=\"TWEET\">\n";
         String rootCloseXML = "</ROOT>";
-        XYZParser parser = new XYZParser();
+
+        int count = 0;
         for(File file:fileList){
-            Seq documents = parser.parseTweet(file.getName(), TextFile.readText(file));
+            Seq documents = XMLParser.parseDocument(file.getName(), TextFile.readText(file));
             List<Document> tweets = JavaConversions.seqAsJavaList(documents);
             for(Document tweet:tweets){
                 if(!contentSet.contains(tweet.getText())){
                     documentSet.add(tweet);
                     contentSet.add(tweet.getText());
+                    System.out.println("Unique tweet ....");
+                }
+                else{
+                    System.out.println("Duplicate tweet count: "+count);
+                    count++;
                 }
             }
         }
@@ -141,6 +148,12 @@ public class TwitterTimeLine implements Serializable {
 
     }
 
+    protected String cleanMessage(String message){
+        String result = message.replaceAll("<","&lt;");
+        result = result.replaceAll(">","&gt;");
+        result = result.replaceAll("&","&amp;");
+        return result.trim();
+    }
 
     public void download() {
         String mainDirectory = Resources.DocumentResources$.MODULE$.twitterDir();
@@ -155,14 +168,17 @@ public class TwitterTimeLine implements Serializable {
 
             for (int i = pageStart; i < numPages; i++) {
                 try {
-                    Paging paging = new Paging(i + 1, pageLength);
+
+                    Paging paging = new Paging(i, pageLength);
                     List<Status> statusList = twitter.getHomeTimeline(paging);
+
                     for (int j = 0; j < statusList.size(); j++) {
                         Status status = statusList.get(j);
                         User twitterUser = status.getUser();
                         String user = twitterUser.getName();
                         String screenName = twitterUser.getScreenName();
                         String message = status.getText().replaceAll("\n", " ");
+                        message = cleanMessage(message);
                         String line = "<RESULT TYPE=\"CONTAINER\" LABEL=\""+ Resources.DocumentModel$.MODULE$.TWEET()+"\">\n" +
                                 "<RESULT TYPE=\"TEXT\" LABEL=\"AUTHORNAME\">\n" + user + "\n</RESULT>" +
                                 "\n<RESULT TYPE=\"TEXT\" LABEL=\"TWEETTEXT\">\n" + message.trim() + "\n</RESULT>\n</RESULT>";
@@ -170,7 +186,7 @@ public class TwitterTimeLine implements Serializable {
                         twitterFile.writeNextLine(line);
                     }
 
-                    System.out.println("Waiting for next page...");
+                    System.out.println("Waiting for next page ("+i+"/"+numPages+")...");
                     sleep(60000L);
 
 
@@ -182,7 +198,7 @@ public class TwitterTimeLine implements Serializable {
             }
             twitterFile.writeNextLine("</ROOT>");
             twitterFile.closeBufferWrite();
-            System.out.println("Waiting for next session...");
+            System.out.println("Waiting for next ("+sessionCount+"/"+sessionMax+")session...");
             sleep(100000L);
             sessionCount++;
         }
@@ -194,7 +210,7 @@ public class TwitterTimeLine implements Serializable {
                 .setPageLength(10).setSessionMax(1);
 
         twitterTimeLine.download();
-        //twitterTimeLine.eliminateDuplicates("twitter-main-2.xml");
+        //twitterTimeLine.eliminateDuplicates("twitter-main-1.xml");
     }
 
 
