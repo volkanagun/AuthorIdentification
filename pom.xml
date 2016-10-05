@@ -4,7 +4,7 @@
     <groupId>wolf</groupId>
     <artifactId>AuthorIdentification</artifactId>
     <packaging>pom</packaging>
-    <version>1.0</version>
+    <version>1.2</version>
     <name>${project.artifactId}</name>
     <description>Author Identification for Turkish</description>
     <inceptionYear>2015</inceptionYear>
@@ -32,9 +32,86 @@
         <encoding>UTF-8</encoding>
         <scala.version>2.10.5</scala.version>
         <scala.compat.version>2.10</scala.compat.version>
+        <nd4j.backend>nd4j-native-platform</nd4j.backend>
+        <nd4j.version>0.5.0</nd4j.version>
+        <dl4j.version>0.5.0</dl4j.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nd4j</groupId>
+                <artifactId>nd4j-native-platform</artifactId>
+                <version>${nd4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nd4j</groupId>
+                <artifactId>nd4j-cuda-7.5-platform</artifactId>
+                <version>${nd4j.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+
     <dependencies>
+
+
+        <!--Deep Learning-->
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>${nd4j.backend}</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-core</artifactId>
+            <version>${dl4j.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <!--<exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-dataformat-joda</artifactId>
+                </exclusion>-->
+
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-nlp</artifactId>
+            <version>${dl4j.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
+
+        </dependency>
 
         <!--<dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -47,11 +124,15 @@
             <version>2.4.4</version>
         </dependency>-->
 
-        <!--<dependency>
-            <groupId>it.nerdammer.bigdata</groupId>
-            <artifactId>spark-hbase-connector_2.10</artifactId>
-            <version>1.0.2</version>
-        </dependency>-->
+        <!--Deep Learing Finished-->
+
+        <!-- https://mvnrepository.com/artifact/com.cybozu.labs/langdetect -->
+        <dependency>
+            <groupId>com.cybozu.labs</groupId>
+            <artifactId>langdetect</artifactId>
+            <version>1.1-20120112</version>
+        </dependency>
+
 
         <dependency>
             <groupId>cc.mallet</groupId>
@@ -79,6 +160,14 @@
             <version>4.1.0</version>
         </dependency>
 
+        <!--Using Native Libraries-->
+        <dependency>
+            <groupId>com.github.fommil.netlib</groupId>
+            <artifactId>all</artifactId>
+            <version>1.1.2</version>
+            <type>pom</type>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>fluent-hc</artifactId>
@@ -90,36 +179,36 @@
             <version>[4.0,)</version>
         </dependency>
 
+        <!--Scala-->
+
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.10.4</version>
+            <version>2.10.5</version>
         </dependency>
 
+        <!--Spark-->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.10</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.2</version>
         </dependency>
 
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-mllib_2.10</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.2</version>
+
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.10</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.2</version>
+
         </dependency>
 
-        <!--<dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-examples_2.10</artifactId>
-            <version>1.4.0</version>
-        </dependency>-->
 
         <dependency>
             <groupId>amplab</groupId>
@@ -140,25 +229,13 @@
         </dependency>
 
 
-        <!--<dependency>
-            <groupId>com.google.collections</groupId>
-            <artifactId>google-collections</artifactId>
-            <version>1.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>18.0</version>
-        </dependency>-->
-
         <!--Opennlp-->
 
-        <!--<dependency>
+        <dependency>
             <groupId>org.apache.opennlp</groupId>
             <artifactId>opennlp-tools</artifactId>
             <version>1.5.3</version>
-        </dependency>-->
+        </dependency>
 
         <dependency>
             <groupId>org.apache.opennlp</groupId>
@@ -174,11 +251,7 @@
         </dependency>
 
 
-        <dependency>
-            <groupId>org.twitter4j</groupId>
-            <artifactId>twitter4j-core</artifactId>
-            <version>[4.0,)</version>
-        </dependency>
+
 
 
         <!-- Test -->
@@ -200,7 +273,10 @@
             <version>2.2.4</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
+
+
 
     <build>
         <sourceDirectory>src/main/scala</sourceDirectory>
@@ -241,6 +317,28 @@
                         <include>**/*Suite.*</include>
                     </includes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.apache.spark.ml.MainExecutor$</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
