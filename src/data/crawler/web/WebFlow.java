@@ -670,7 +670,7 @@ public class WebFlow implements Serializable, Callable<Boolean> {
         */
 
         List<WebFlow> flows = Arrays.asList(flowWebrazzi, flowBesHarfliler, flowGezenler,
-                flowHayrola, flowSonBirseyler,flowEgonomic,flowAvaz, flowMilliyet/*,flowGazeteOku*/);
+                flowHayrola, flowSonBirseyler,flowEgonomic,flowAvaz, flowMilliyet,flowGazeteOku);
 
         batchSubmit(service, flows);
 
