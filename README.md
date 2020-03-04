@@ -1,4 +1,4 @@
-# AuthorIdentification for Turkish
+# Author Identification for Turkish and English on Spark
 
 The aim of this project is to classify authors according to written text comming from blog articles, 
 news paper articles and tweeter. Project has several stages. First state is WebFlow stage which is collecting articles and generating XML documents from several web resoruces. Second stage is about RDD processing on spark for gathering statistics such as genres, articles types (tweet, blog, and news paper) and author specific statistics such as average length of documents of different types, number of documents from blogs, news papers and tweeter and number of genres for written sources by the author. Third statge is feature extraction and classification.
